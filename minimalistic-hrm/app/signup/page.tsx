@@ -257,7 +257,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-
+import { useRouter } from 'next/navigation';
 interface SignupForm {
   fullname: string;
   email: string;
@@ -275,7 +275,7 @@ const SignupPage = () => {
 
   const [errors, setErrors] = useState<Partial<SignupForm>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const router = useRouter();
   const roles = [
     { value: 'admin', label: 'Administrator' },
     { value: 'user', label: 'User' }
@@ -321,7 +321,7 @@ const SignupPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/access-control/signup', {
+      const response = await axios.post('http://localhost:5000/api/checksession/access-control/signup', {
         username: formData.fullname,
         email: formData.email,
         password: formData.password,
@@ -336,6 +336,7 @@ const SignupPage = () => {
           password: '',
           role: ''
         });
+        router.push('/login'); 
       }
     } catch (error: any) {
       console.error('Signup failed:', error);

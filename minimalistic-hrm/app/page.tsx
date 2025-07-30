@@ -1,7 +1,5 @@
 'use client'
 
-import Image from "next/image";
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 dark:from-[#111] dark:to-[#333] text-gray-800 dark:text-white font-sans relative">

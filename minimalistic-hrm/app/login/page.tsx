@@ -13,7 +13,7 @@
 // //     password: '',
 // //     role: ''
 // //   });
-  
+
 // //   const [errors, setErrors] = useState<Partial<LoginForm>>({});
 // //   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -51,7 +51,7 @@
 // //       ...prev,
 // //       [name]: value
 // //     }));
-    
+
 // //     // Clear error when user starts typing
 // //     if (errors[name as keyof LoginForm]) {
 // //       setErrors(prev => ({
@@ -63,19 +63,19 @@
 
 // //   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 // //     e.preventDefault();
-    
+
 // //     if (!validateForm()) return;
 
 // //     setIsLoading(true);
-    
+
 // //     try {
 // //       // Simulate API call
 // //       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
 // //       // Here you would typically make an API call to your authentication endpoint
 // //       console.log('Login attempt:', formData);
 // //       alert(`Login successful! Welcome ${formData.role}!`);
-      
+
 // //     } catch (error) {
 // //       console.error('Login failed:', error);
 // //     } finally {
@@ -204,7 +204,6 @@
 // //             </button>
 // //           </div>
 
-
 // //         </div>
 // //       </div>
 // //     </div>
@@ -212,13 +211,6 @@
 // // };
 
 // // export default LoginPage;
-
-
-
-
-
-
-
 
 // "use client";
 // import { useState } from 'react';
@@ -413,18 +405,11 @@
 
 // export default LoginPage;
 
-
-
-
-
-
-
-
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import {jwtDecode} from "jwt-decode"; // Import jwt-decode
+import { jwtDecode } from "jwt-decode"; // Import jwt-decode
 
 interface LoginForm {
   email: string;
@@ -496,59 +481,58 @@ const LoginPage = () => {
     setApiError(null); // Clear API error when user modifies input
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
 
-    console.log("Form Data being sent:", JSON.stringify(formData, null, 2)); // Detailed log
+  if (!validateForm()) return;
 
-    if (!validateForm()) return;
+  setIsLoading(true);
+  setApiError(null);
 
-    setIsLoading(true);
-    setApiError(null);
-
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/access-control/login",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("API Response:", JSON.stringify(response.data, null, 2)); // Detailed log
-
-      if (response.data.success) {
-        const { token, user } = response.data;
-        console.log("User role received:", user.role);
-        localStorage.setItem("token", token);
-        localStorage.setItem("userRole", user.role);
-        localStorage.setItem("userId", user._id);
-        localStorage.setItem("username", user.username);
-
-        // Decode the token to get the role
-        const decodedToken: JwtPayload = jwtDecode(token);
-
-        alert("Login successful!");
-
-        // Redirect based on the role from the decoded token
-        if (decodedToken.role === "Admin") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/");
-        }
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/checksession/access-control/login",
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
-    } catch (error: any) {
-      console.error("Login error details:", JSON.stringify(error.response?.data, null, 2)); // Detailed log
-      setApiError(
-        error.response?.data?.message ||
-          "Login failed. Please check your credentials and try again."
-      );
-    } finally {
-      setIsLoading(false);
+    );
+
+    // Check if we got a token and user in response (instead of response.data.success)
+    if (response.data.token && response.data.user) {
+      const { token, user } = response.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("userRole", user.role);
+      localStorage.setItem("userId", user.id);  // Note: using 'id' instead of '_id' based on your response
+      localStorage.setItem("username", user.username);
+      console.log("Login successful:", user);
+      const decodedToken: JwtPayload = jwtDecode(token);
+      console.log("Decoded Token:", decodedToken);
+      alert("Login successful!");
+
+      // Navigate immediately based on role
+      if (decodedToken.role === "Admin") {
+        router.push("/admin");
+      } else if (decodedToken.role === "User") {
+        router.push("/users");
+      } else {
+        setApiError("Unknown role detected.");
+      }
+    } else {
+      setApiError("Login failed. Invalid response from server.");
     }
-  };
+  } catch (error: any) {
+    setApiError(
+      error.response?.data?.message ||
+        "Login failed. Please check your credentials and try again."
+    );
+    console.error("Login error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -614,7 +598,9 @@ const LoginPage = () => {
                 onChange={handleInputChange}
                 disabled={isLoading}
                 className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${
-                  errors.password ? "border-red-500 bg-red-50" : "border-gray-300"
+                  errors.password
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-300"
                 }`}
                 placeholder="Enter your password"
               />
@@ -653,7 +639,9 @@ const LoginPage = () => {
             </div>
 
             {apiError && (
-              <p className="mt-2 text-sm text-red-600 text-center">{apiError}</p>
+              <p className="mt-2 text-sm text-red-600 text-center">
+                {apiError}
+              </p>
             )}
 
             <button
@@ -697,5 +685,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
- 
