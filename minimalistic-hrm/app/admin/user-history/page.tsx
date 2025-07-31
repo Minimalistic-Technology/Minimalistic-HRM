@@ -13,7 +13,6 @@ interface User {
   id: number;
   email: string;
   fullName: string;
-  role: string;
   isActive: boolean;
   lastCheckIn: string;
   lastCheckOut: string;
@@ -28,7 +27,6 @@ const UserHistoryDashboard: React.FC = () => {
       id: 1,
       email: 'john.doe@company.com',
       fullName: 'John Doe',
-      role: 'Developer',
       isActive: true,
       lastCheckIn: '2025-07-23T09:15:00',
       lastCheckOut: '2025-07-22T17:30:00',
@@ -44,7 +42,6 @@ const UserHistoryDashboard: React.FC = () => {
       id: 2,
       email: 'sarah.smith@company.com',
       fullName: 'Sarah Smith',
-      role: 'Designer',
       isActive: false,
       lastCheckIn: '2025-07-23T08:30:00',
       lastCheckOut: '2025-07-23T16:45:00',
@@ -60,7 +57,6 @@ const UserHistoryDashboard: React.FC = () => {
       id: 3,
       email: 'mike.johnson@company.com',
       fullName: 'Mike Johnson',
-      role: 'Manager',
       isActive: true,
       lastCheckIn: '2025-07-23T07:45:00',
       lastCheckOut: '2025-07-22T19:20:00',
@@ -76,7 +72,6 @@ const UserHistoryDashboard: React.FC = () => {
       id: 4,
       email: 'emma.wilson@company.com',
       fullName: 'Emma Wilson',
-      role: 'QA Engineer',
       isActive: false,
       lastCheckIn: '2025-07-22T10:00:00',
       lastCheckOut: '2025-07-22T18:30:00',
@@ -91,7 +86,6 @@ const UserHistoryDashboard: React.FC = () => {
   ]);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSessionHistory, setShowSessionHistory] = useState<boolean>(false);
@@ -99,12 +93,11 @@ const UserHistoryDashboard: React.FC = () => {
   const filteredUsers: User[] = users.filter((user: User) => {
     const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || 
                          (statusFilter === 'active' && user.isActive) ||
                          (statusFilter === 'inactive' && !user.isActive);
     
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const totalActiveUsers: number = users.filter((user: User) => user.isActive).length;
@@ -121,16 +114,6 @@ const UserHistoryDashboard: React.FC = () => {
     const seconds = String(date.getSeconds()).padStart(2, '0');
     
     return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
-  };
-
-  const getRoleColor = (role: string): string => {
-    const colors: { [key: string]: string } = {
-      'Developer': 'bg-blue-100 text-blue-800',
-      'Designer': 'bg-purple-100 text-purple-800',
-      'Manager': 'bg-green-100 text-green-800',
-      'QA Engineer': 'bg-orange-100 text-orange-800'
-    };
-    return colors[role] || 'bg-gray-100 text-gray-800';
   };
 
   const handleViewSessions = (user: User): void => {
@@ -208,18 +191,6 @@ const UserHistoryDashboard: React.FC = () => {
             
             <select
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={roleFilter}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRoleFilter(e.target.value)}
-            >
-              <option value="all">All Roles</option>
-              <option value="Developer">Developer</option>
-              <option value="Designer">Designer</option>
-              <option value="Manager">Manager</option>
-              <option value="QA Engineer">QA Engineer</option>
-            </select>
-            
-            <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={statusFilter}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
             >
@@ -241,7 +212,6 @@ const UserHistoryDashboard: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Check-in</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Check-out</th>
@@ -257,11 +227,6 @@ const UserHistoryDashboard: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                        {user.role}
-                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
@@ -407,3 +372,11 @@ const UserHistoryDashboard: React.FC = () => {
 };
 
 export default UserHistoryDashboard;
+
+
+
+
+
+
+
+
