@@ -1,7 +1,9 @@
 
+
+
 "use client"
 import React, { useState, useEffect } from 'react';
-import { User, Plus, Edit2, Trash2, Mail, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { User, Plus, Edit2, Trash2, Mail, Shield, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 // Define interfaces for type safety
 interface UserType {
@@ -26,6 +28,13 @@ interface Role {
   color: string;
 }
 
+interface ValidationErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+}
+
 const UserManager: React.FC = () => {
   const [users, setUsers] = useState<UserType[]>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
@@ -33,6 +42,7 @@ const UserManager: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [fetchingUsers, setFetchingUsers] = useState<boolean>(true);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   
   const [formData, setFormData] = useState<FormData>({
     username: '',
@@ -47,33 +57,123 @@ const UserManager: React.FC = () => {
   ];
 
   // API Base URL - adjust this to match your backend
-  const API_BASE_URL = 'http://localhost:5000/api/checksession'; // Update with your actual backend URL
+  const API_BASE_URL = 'http://localhost:5000/api/checksession';
 
   // Get auth token from localStorage or cookies
   const getAuthToken = (): string | null => {
-    // Try to get from localStorage first (if stored there)
-    const token = localStorage.getItem('access_token');
-    console.log('Token from localStorage:', token);
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
     if (token) return token;
     
-    // Try to get from cookies
     const cookies = document.cookie.split(';');
     const accessTokenCookie = cookies.find(cookie => cookie.trim().startsWith('access_token='));
-    console.log('Cookies:', cookies); // Debug cookies
     if (accessTokenCookie) {
-      const cookieToken = accessTokenCookie.split('=')[1];
-      console.log('Token from cookie:', cookieToken);
-      return cookieToken;
+      return accessTokenCookie.split('=')[1];
     }
     
-    console.log('No token found in localStorage or cookies');
     return null;
+  };
+
+  // Enhanced email validation
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email.toLowerCase());
+  };
+
+  // Enhanced password validation
+  const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('At least 8 characters long');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('At least one uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('At least one lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('At least one number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('At least one special character (!@#$%^&*(),.?":{}|<>)');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
+  // Username validation
+  const validateUsername = (username: string): boolean => {
+    return username.trim().length >= 3 && /^[a-zA-Z0-9_-]+$/.test(username);
+  };
+
+  // Check if email already exists
+  const checkEmailExists = (email: string, excludeUserId?: string): boolean => {
+    return users.some(user => 
+      user.email.toLowerCase() === email.toLowerCase() && 
+      user._id !== excludeUserId
+    );
+  };
+
+  // Comprehensive form validation
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {};
+    let isValid = true;
+
+    // Username validation
+    if (!formData.username.trim()) {
+      errors.username = 'Username is required';
+      isValid = false;
+    } else if (!validateUsername(formData.username)) {
+      errors.username = 'Username must be at least 3 characters and contain only letters, numbers, hyphens, and underscores';
+      isValid = false;
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address (e.g., user@example.com)';
+      isValid = false;
+    } else if (checkEmailExists(formData.email, editingUser?._id)) {
+      errors.email = 'This email address is already registered';
+      isValid = false;
+    }
+
+    // Password validation
+    if (!editingUser && !formData.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password) {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        errors.password = `Password must contain: ${passwordValidation.errors.join(', ')}`;
+        isValid = false;
+      }
+    }
+
+    // Role validation
+    if (!formData.role) {
+      errors.role = 'Please select a role';
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
+  // Format email to lowercase
+  const formatEmail = (email: string): string => {
+    return email.toLowerCase().trim();
   };
 
   // Fetch all users from API
   const fetchUsers = async (): Promise<void> => {
     try {
-      console.log('Starting to fetch users...');
       setFetchingUsers(true);
       const token = getAuthToken();
 
@@ -81,32 +181,24 @@ const UserManager: React.FC = () => {
         'Content-Type': 'application/json',
       };
       
-      // Only add Authorization header if token exists
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        console.warn('No auth token found. Attempting request without authentication.');
       }
 
-      console.log('Making API request to:', `${API_BASE_URL}/access-control/users`);
       const response = await fetch(`${API_BASE_URL}/access-control/users`, {
         method: 'GET',
         headers,
         credentials: 'include',
       });
 
-      console.log('API Response status:', response.status);
-      console.log('API Response ok:', response.ok);
-
       if (response.ok) {
         const fetchedUsers = await response.json();
-        console.log('Fetched users from API:', fetchedUsers);
         setUsers(fetchedUsers);
       } else {
         const errorText = await response.text();
         console.error('Failed to fetch users:', response.status, errorText);
         if (response.status === 404) {
-          alert('Users endpoint not found. Please check if the backend API route exists at /api/access-control/users.');
+          alert('Users endpoint not found. Please check if the backend API route exists.');
         } else if (response.status === 401 || response.status === 403) {
           alert('Unauthorized access. Please ensure you are logged in with the correct credentials.');
         } else {
@@ -130,7 +222,10 @@ const UserManager: React.FC = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(userData),
+        body: JSON.stringify({
+          ...userData,
+          email: formatEmail(userData.email)
+        }),
       });
 
       if (response.ok) {
@@ -139,12 +234,96 @@ const UserManager: React.FC = () => {
         return true;
       } else {
         const error = await response.json();
+        if (error.message && error.message.includes('Email already exists')) {
+          setValidationErrors({ email: 'This email address is already registered' });
+        }
         alert(error.message || 'Failed to add user');
         return false;
       }
     } catch (error) {
       console.error('Error adding user:', error);
       alert('Failed to add user. Please check your connection.');
+      return false;
+    }
+  };
+
+  // Update user via API
+  const updateUser = async (userId: string, userData: Partial<FormData>): Promise<boolean> => {
+    try {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const updateData = { ...userData };
+      if (!updateData.password) {
+        delete updateData.password;
+      }
+      
+      if (updateData.email) {
+        updateData.email = formatEmail(updateData.email);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/access-control/user/${userId}`, {
+        method: 'PUT',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('User updated successfully:', result);
+        return true;
+      } else {
+        const error = await response.json().catch(() => ({ message: 'Failed to update user' }));
+        if (error.message && error.message.includes('Email already exists')) {
+          setValidationErrors({ email: 'This email address is already registered' });
+        }
+        alert(error.message || 'Failed to update user');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Failed to update user. Please check your connection.');
+      return false;
+    }
+  };
+
+  // Delete user via API
+  const deleteUserAPI = async (userId: string): Promise<boolean> => {
+    try {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/access-control/user/${userId}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('User deleted successfully:', result);
+        return true;
+      } else {
+        const error = await response.json().catch(() => ({ message: 'Failed to delete user' }));
+        alert(error.message || 'Failed to delete user');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please check your connection.');
       return false;
     }
   };
@@ -164,24 +343,20 @@ const UserManager: React.FC = () => {
     setEditingUser(null);
     setShowForm(false);
     setShowPassword(false);
+    setValidationErrors({});
+  };
+
+  const handleInputChange = (field: keyof FormData, value: string): void => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({ ...prev, [field]: undefined }));
+    }
   };
 
   const handleSubmit = async (): Promise<void> => {
-    if (!formData.username || !formData.email || !formData.password) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      alert('Please enter a valid email address');
-      return;
-    }
-
-    // Password validation
-    if (formData.password.length < 6) {
-      alert('Password must be at least 6 characters long');
+    if (!validateForm()) {
       return;
     }
 
@@ -189,31 +364,20 @@ const UserManager: React.FC = () => {
 
     try {
       if (editingUser) {
-        // For editing, you might need to implement an update API endpoint
-        // For now, just update locally
-        setUsers(users.map((user: UserType) => 
-          user._id === editingUser._id 
-            ? { 
-                ...user,
-                username: formData.username,
-                email: formData.email,
-                role: formData.role,
-                updatedAt: new Date().toISOString()
-              }
-            : user
-        ));
-        alert('User updated successfully (local update)');
+        const success = await updateUser(editingUser._id, formData);
+        if (success) {
+          await fetchUsers();
+          alert('User updated successfully!');
+          resetForm();
+        }
       } else {
-        // Add new user
         const success = await addUser(formData);
         if (success) {
-          // Refresh the users list after successful addition
           await fetchUsers();
           alert('User added successfully!');
+          resetForm();
         }
       }
-      
-      resetForm();
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       alert('An error occurred. Please try again.');
@@ -226,18 +390,29 @@ const UserManager: React.FC = () => {
     setFormData({
       username: user.username,
       email: user.email,
-      password: '', // Don't populate password for security
+      password: '',
       role: user.role
     });
     setEditingUser(user);
     setShowForm(true);
+    setValidationErrors({});
   };
 
-  const handleDelete = (userId: string): void => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      // For now, delete locally. You can implement a delete API endpoint later
-      setUsers(users.filter((user: UserType) => user._id !== userId));
-      alert('User deleted (local delete)');
+  const handleDelete = async (userId: string, username: string): Promise<void> => {
+    if (window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+      setLoading(true);
+      try {
+        const success = await deleteUserAPI(userId);
+        if (success) {
+          await fetchUsers();
+          alert('User deleted successfully!');
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Failed to delete user. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -247,6 +422,19 @@ const UserManager: React.FC = () => {
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const getPasswordStrength = (password: string): { strength: string; color: string } => {
+    if (!password) return { strength: '', color: '' };
+    
+    const validation = validatePassword(password);
+    const score = 5 - validation.errors.length;
+    
+    if (score === 5) return { strength: 'Very Strong', color: 'text-green-600' };
+    if (score === 4) return { strength: 'Strong', color: 'text-blue-600' };
+    if (score === 3) return { strength: 'Medium', color: 'text-yellow-600' };
+    if (score === 2) return { strength: 'Weak', color: 'text-orange-600' };
+    return { strength: 'Very Weak', color: 'text-red-600' };
   };
 
   if (fetchingUsers) {
@@ -297,12 +485,19 @@ const UserManager: React.FC = () => {
                 <input
                   type="text"
                   value={formData.username}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, username: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter username"
-                  required
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    validationErrors.username ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter username (min 3 characters, letters, numbers, _, -)"
                   disabled={loading}
                 />
+                {validationErrors.username && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {validationErrors.username}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -312,28 +507,41 @@ const UserManager: React.FC = () => {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter email address"
-                  required
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    validationErrors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter email address (e.g., user@example.com)"
                   disabled={loading}
                 />
+                {validationErrors.email && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {validationErrors.email}
+                  </p>
+                )}
+                {formData.email && validateEmail(formData.email) && !validationErrors.email && (
+                  <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    Valid email format
+                  </p>
+                )}
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password * {editingUser && <span className="text-xs text-gray-500">(leave blank to keep current)</span>}
+                  Password {editingUser ? <span className="text-xs text-gray-500">(leave blank to keep current)</span> : '*'}
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, password: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={editingUser ? "Enter new password" : "Enter password"}
-                    required={!editingUser}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      validationErrors.password ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={editingUser ? "Enter new password" : "Enter password (min 8 chars, uppercase, lowercase, number, special char)"}
                     disabled={loading}
-                    minLength={6}
                   />
                   <button
                     type="button"
@@ -344,6 +552,27 @@ const UserManager: React.FC = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                
+                {formData.password && (
+                  <div className="mt-2">
+                    <div className={`text-sm ${getPasswordStrength(formData.password).color}`}>
+                      Password Strength: {getPasswordStrength(formData.password).strength}
+                    </div>
+                  </div>
+                )}
+                
+                {validationErrors.password && (
+                  <p className="mt-1 text-sm text-red-600 flex items-start gap-1">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{validationErrors.password}</span>
+                  </p>
+                )}
+                
+                {!editingUser && (
+                  <div className="mt-2 text-xs text-gray-600">
+                   
+                  </div>
+                )}
               </div>
 
               <div>
@@ -352,8 +581,10 @@ const UserManager: React.FC = () => {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({...formData, role: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    validationErrors.role ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   disabled={loading}
                 >
                   {roles.map((role: Role) => (
@@ -362,6 +593,12 @@ const UserManager: React.FC = () => {
                     </option>
                   ))}
                 </select>
+                {validationErrors.role && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {validationErrors.role}
+                  </p>
+                )}
               </div>
 
               <div className="md:col-span-2 flex gap-3 pt-4">
@@ -387,9 +624,7 @@ const UserManager: React.FC = () => {
 
         <div className="p-6">
           <div className="mb-4 p-4 bg-gray-100 rounded-lg">
-            
             <p className="text-sm text-gray-600">Users count: {users.length}</p>
-            
           </div>
           
           {users.length === 0 ? (
@@ -457,7 +692,7 @@ const UserManager: React.FC = () => {
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(user._id)}
+                              onClick={() => handleDelete(user._id, user.username)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Delete user"
                               disabled={loading}

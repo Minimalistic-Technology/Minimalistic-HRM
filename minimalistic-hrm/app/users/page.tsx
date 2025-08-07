@@ -1,8 +1,7 @@
 
-
 "use client";
 import React, { useState, useEffect } from "react";
-import { Clock, LogIn, LogOut, History, User as UserIcon, Calendar, MapPin } from "lucide-react";
+import { Clock, LogIn, LogOut, History, User as UserIcon, Calendar, MapPin, Navigation, RefreshCw } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 
@@ -39,6 +38,21 @@ interface Location {
   state: string;
   country: string;
   ip: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  address?: string;
+}
+
+interface GeolocationData {
+  latitude: number;
+  longitude: number;
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
+  timestamp?: number;
 }
 
 interface ApiError {
@@ -52,6 +66,10 @@ const CheckInOutApp: React.FC = () => {
   const [userName, setUserName] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [locations, setLocations] = useState<Location[]>([]);
+  const [currentGeolocation, setCurrentGeolocation] = useState<GeolocationData | null>(null);
+  const [locationLoading, setLocationLoading] = useState<boolean>(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [useCurrentLocation, setUseCurrentLocation] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "history">("dashboard");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -67,6 +85,260 @@ const CheckInOutApp: React.FC = () => {
     return localStorage.getItem("token");
   };
 
+  // Fetch current location using browser geolocation API
+  const getCurrentLocation = (): Promise<GeolocationData> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by this browser"));
+        return;
+      }
+
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000 // 1 minute cache
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          try {
+            // Try multiple free geocoding services
+            let geoData: GeolocationData | null = null;
+
+            // First try: Nominatim (OpenStreetMap) - Free and reliable
+            try {
+              const nominatimResponse = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=en`,
+                {
+                  headers: {
+                    'User-Agent': 'CheckInApp/1.0'
+                  }
+                }
+              );
+              
+              if (nominatimResponse.ok) {
+                const nominatimData = await nominatimResponse.json();
+                const address = nominatimData.address || {};
+                
+                geoData = {
+                  latitude,
+                  longitude,
+                  city: address.city || address.town || address.village || address.suburb || "Current Location",
+                  state: address.state || address.region || address.province || "Unknown State",
+                  country: address.country || "Unknown Country",
+                  address: nominatimData.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+                  timestamp: Date.now()
+                };
+              }
+            } catch (nominatimError) {
+              console.warn("Nominatim geocoding failed:", nominatimError);
+            }
+
+            // Second try: BigDataCloud (Free tier available)
+            if (!geoData) {
+              try {
+                const bigDataResponse = await fetch(
+                  `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+                );
+                
+                if (bigDataResponse.ok) {
+                  const bigDataData = await bigDataResponse.json();
+                  
+                  geoData = {
+                    latitude,
+                    longitude,
+                    city: bigDataData.city || bigDataData.locality || "Current Location",
+                    state: bigDataData.principalSubdivision || "Unknown State",
+                    country: bigDataData.countryName || "Unknown Country",
+                    address: `${bigDataData.city || 'Current Location'}, ${bigDataData.principalSubdivision || 'Unknown State'}, ${bigDataData.countryName || 'Unknown Country'}`,
+                    timestamp: Date.now()
+                  };
+                }
+              } catch (bigDataError) {
+                console.warn("BigDataCloud geocoding failed:", bigDataError);
+              }
+            }
+
+            // If all geocoding fails, use coordinates
+            if (!geoData) {
+              geoData = {
+                latitude,
+                longitude,
+                city: "Current Location",
+                state: "Unknown State",
+                country: "Unknown Country",
+                address: `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
+                timestamp: Date.now()
+              };
+            }
+
+            resolve(geoData);
+            
+          } catch (geocodingError) {
+            console.warn("All geocoding services failed:", geocodingError);
+            // Final fallback: just coordinates
+            resolve({
+              latitude,
+              longitude,
+              city: "Current Location",
+              state: "Unknown State",
+              country: "Unknown Country",
+              address: `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
+              timestamp: Date.now()
+            });
+          }
+        },
+        (error) => {
+          let errorMessage = "Unable to retrieve location";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location access denied. Please allow location access and try again.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information is unavailable. Please check your GPS/location services.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out. Please try again.";
+              break;
+          }
+          reject(new Error(errorMessage));
+        },
+        options
+      );
+    });
+  };
+
+  // Save location to database
+  const saveLocationToDatabase = async (geoData: GeolocationData, locationString: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.warn("No auth token found, skipping location save to database");
+        return;
+      }
+
+      // Prepare location data for API
+      const locationData = {
+        city: geoData.city || "Current Location",
+        state: geoData.state || "Unknown State", 
+        country: geoData.country || "Unknown Country",
+        ip: "127.0.0.1", // You might want to get actual IP or use a default
+        coordinates: {
+          latitude: geoData.latitude,
+          longitude: geoData.longitude
+        },
+        address: geoData.address,
+        userId: userId // Include userId if your API needs it
+      };
+
+      console.log("Saving location to database:", locationData);
+
+      // Call your location API endpoint to save location
+      const response = await axios.post(
+        `${API_BASE_URL}/location`,
+        locationData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log("Location saved to database successfully:", response.data);
+      
+      // Update locations state with the new location
+      const newLocation: Location = response.data;
+      setLocations(prevLocations => {
+        // Check if location already exists to avoid duplicates
+        const exists = prevLocations.some(loc => 
+          loc.city === newLocation.city && 
+          loc.state === newLocation.state && 
+          loc.country === newLocation.country
+        );
+        
+        if (!exists) {
+          console.log("Adding new location to state:", newLocation);
+          return [newLocation, ...prevLocations];
+        } else {
+          console.log("Location already exists, not adding duplicate");
+          return prevLocations;
+        }
+      });
+      
+    } catch (error) {
+      console.error("Failed to save location to database:", error);
+      const axiosError = error as AxiosError<ApiError>;
+      if (axiosError.response?.data?.error) {
+        console.error("API Error:", axiosError.response.data.error);
+      }
+      // Don't show error to user as location detection was successful
+      // The location save is a background operation
+    }
+  };
+
+  // Handle getting current location
+  const handleGetCurrentLocation = async () => {
+    if (isCheckedIn) return; // Don't allow location change while checked in
+    
+    setLocationLoading(true);
+    setLocationError(null);
+    
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser. Please use a modern browser like Chrome, Firefox, or Safari.");
+      setLocationLoading(false);
+      return;
+    }
+
+    // Check current permission state if available
+    if (navigator.permissions) {
+      try {
+        const permission = await navigator.permissions.query({name: 'geolocation'});
+        if (permission.state === 'denied') {
+          setLocationError("Location access has been permanently denied. Please enable it in your browser settings and refresh the page.");
+          setLocationLoading(false);
+          return;
+        }
+      } catch (permissionError) {
+        // Permissions API not supported, continue with regular geolocation
+        console.log("Permissions API not supported, continuing...");
+      }
+    }
+    
+    try {
+      const geoData = await getCurrentLocation();
+      setCurrentGeolocation(geoData);
+      
+      // Save current location to localStorage for persistence
+      if (typeof window !== "undefined") {
+        localStorage.setItem("currentGeolocation", JSON.stringify(geoData));
+        localStorage.setItem("useCurrentLocation", "true");
+      }
+      
+      // Set location string based on geolocation data
+      const locationString = geoData.city && geoData.state && geoData.country 
+        ? `${geoData.city}, ${geoData.state}, ${geoData.country}`
+        : geoData.address || "Current Location";
+      
+      setLocation(locationString);
+      setUseCurrentLocation(true);
+      
+      // Save location to database
+      await saveLocationToDatabase(geoData, locationString);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to get location";
+      setLocationError(errorMessage);
+      console.error("Geolocation error:", error);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   // Fetch initial data
   useEffect(() => {
     // Set userId and username from localStorage after mount
@@ -75,6 +347,29 @@ const CheckInOutApp: React.FC = () => {
       const storedUsername = localStorage.getItem("username") || "Guest User";
       setUserId(storedUserId);
       setUserName(storedUsername);
+      
+      // Restore saved current location if exists
+      const savedCurrentLocation = localStorage.getItem("currentGeolocation");
+      const savedUseCurrentLocation = localStorage.getItem("useCurrentLocation");
+      
+      if (savedCurrentLocation && savedUseCurrentLocation === "true") {
+        try {
+          const geoData = JSON.parse(savedCurrentLocation);
+          setCurrentGeolocation(geoData);
+          setUseCurrentLocation(true);
+          
+          // Set location string from saved data
+          const locationString = geoData.city && geoData.state && geoData.country 
+            ? `${geoData.city}, ${geoData.state}, ${geoData.country}`
+            : geoData.address || "Current Location";
+          setLocation(locationString);
+        } catch (error) {
+          console.error("Error parsing saved location:", error);
+          // Clear invalid saved data
+          localStorage.removeItem("currentGeolocation");
+          localStorage.removeItem("useCurrentLocation");
+        }
+      }
     }
   }, []);
 
@@ -151,7 +446,7 @@ const CheckInOutApp: React.FC = () => {
               setLocation(`${uniqueLocations[0].city}, ${uniqueLocations[0].state}, ${uniqueLocations[0].country}`);
             }
           } else if (uniqueLocations.length > 0 && !location) {
-            // No active session, set default location
+            // No active session, set default location if no current location set
             setLocation(`${uniqueLocations[0].city}, ${uniqueLocations[0].state}, ${uniqueLocations[0].country}`);
           }
         } catch (locationError) {
@@ -262,9 +557,18 @@ const CheckInOutApp: React.FC = () => {
         return;
       }
 
+      // Include coordinates if using current location
+      const checkInData: any = { userId, location };
+      if (useCurrentLocation && currentGeolocation) {
+        checkInData.coordinates = {
+          latitude: currentGeolocation.latitude,
+          longitude: currentGeolocation.longitude
+        };
+      }
+
       const response = await axios.post(
         `${API_BASE_URL}/session/checkin`,
-        { userId, location },
+        checkInData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -346,6 +650,9 @@ const CheckInOutApp: React.FC = () => {
       
       setCurrentSession(null);
       setIsCheckedIn(false);
+      // Don't clear current location on checkout - keep it for future use
+      // setUseCurrentLocation(false);
+      // setCurrentGeolocation(null);
     } catch (err) {
       const error = err as AxiosError<ApiError>;
       setError(error.response?.data?.error || "Check-out failed");
@@ -355,8 +662,12 @@ const CheckInOutApp: React.FC = () => {
   };
 
   const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    // This function is no longer needed since we removed the dropdown
+    // Keep it for backward compatibility but it won't be used
     if (!isCheckedIn) {
       setLocation(e.target.value);
+      setUseCurrentLocation(false);
+      setCurrentGeolocation(null);
     }
   };
 
@@ -440,7 +751,16 @@ const CheckInOutApp: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {userName || "Loading User..."}
                 </h1>
-                <p className="text-gray-600">{location || "Please choose a location"}</p>
+                <p className="text-gray-600">
+                  {useCurrentLocation && currentGeolocation ? (
+                    <span className="flex items-center">
+                      <Navigation className="w-4 h-4 mr-1 text-blue-500" />
+                      {location}
+                    </span>
+                  ) : (
+                    location 
+                  )}
+                </p>
               </div>
             </div>
             <div className="text-right space-y-2">
@@ -523,14 +843,17 @@ const CheckInOutApp: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-green-600 mb-1">Duration</p>
+                              <p className="text-sm text-green-600 mb-1">Duration</p>
                       <p className="text-lg font-semibold text-green-800">
                         {calculateDuration(currentSession.checkInTime, new Date())}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-green-600 mb-1">Location</p>
-                      <p className="text-lg font-semibold text-green-800">
+                       </p>
+                     </div>
+                     <div className="text-center">
+                       <p className="text-sm text-green-600 mb-1">Location</p>
+                      <p className="text-lg font-semibold text-green-800 flex items-center justify-center">
+                        {useCurrentLocation && (
+                          <Navigation className="w-4 h-4 mr-1 text-blue-500" />
+                        )}
                         {currentSession.location}
                       </p>
                     </div>
@@ -541,37 +864,178 @@ const CheckInOutApp: React.FC = () => {
               <div className="mb-8">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   <MapPin className="w-4 h-4 inline-block mr-1" />
-                  Choose Location
+                  Current Location
                 </label>
-                <select
-                  value={location}
-                  onChange={handleLocationChange}
-                  disabled={isCheckedIn || loading}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">Please select your location</option>
-                  {locations.map((loc) => {
-                    const locationString = `${loc.city}, ${loc.state}, ${loc.country}`;
-                    return (
-                      <option
-                        key={`${loc._id}-${loc.city}-${loc.state}-${loc.country}`}
-                        value={locationString}
+                
+                {/* Current Location Section */}
+                <div className="space-y-4">
+                  {!useCurrentLocation ? (
+                    <div>
+                      <button
+                        onClick={handleGetCurrentLocation}
+                        disabled={isCheckedIn || locationLoading || loading}
+                        className="flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed w-full justify-center"
                       >
-                        {locationString}
-                      </option>
-                    );
-                  })}
-                </select>
-                {!location && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    Please choose your location before checking in
-                  </p>
-                )}
-                {isCheckedIn && (
-                  <p className="text-sm text-blue-600 mt-2">
-                    Location cannot be changed while checked in
-                  </p>
-                )}
+                        {locationLoading ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        ) : (
+                          <Navigation className="w-5 h-5 mr-2" />
+                        )}
+                        {locationLoading ? "Detecting Location..." : "Get My Current Location"}
+                      </button>
+                      
+                      {/* Location Permission Instructions */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                        <p className="text-sm text-blue-800 font-medium mb-2">📍 How to enable location access:</p>
+                        <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
+                          <li>Click "Get My Current Location" button above</li>
+                          <li>Allow location access when browser asks</li>
+                          <li>If blocked, click the lock icon in address bar</li>
+                          <li>Set Location permission to "Allow"</li>
+                          <li>Refresh the page and try again</li>
+                        </ol>
+                      </div>
+                      
+                      {locationError && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-3">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-sm font-medium text-red-800">Location Error</h3>
+                              <p className="text-sm text-red-700 mt-1">{locationError}</p>
+                              
+                              {locationError.includes("denied") && (
+                                <div className="mt-3 bg-white border border-red-200 rounded p-3">
+                                  <p className="text-xs font-medium text-red-800 mb-2">To fix this:</p>
+                                  <div className="text-xs text-red-700 space-y-1">
+                                    <p><strong>Chrome/Edge:</strong> Click the 🔒 icon → Site settings → Location → Allow</p>
+                                    <p><strong>Firefox:</strong> Click the 🛡️ icon → Permissions → Location → Allow</p>
+                                    <p><strong>Safari:</strong> Safari → Preferences → Websites → Location</p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setLocationError(null);
+                                      window.location.reload();
+                                    }}
+                                    className="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 rounded"
+                                  >
+                                    Refresh Page
+                                  </button>
+                                </div>
+                              )}
+                              
+                              {locationError.includes("unavailable") && (
+                                <div className="mt-3 bg-white border border-red-200 rounded p-3">
+                                  <p className="text-xs text-red-700">
+                                    Please check that:
+                                    <br />• GPS/Location services are enabled on your device
+                                    <br />• You have an internet connection
+                                    <br />• Try moving to an area with better signal
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {locationError.includes("timeout") && (
+                                <div className="mt-3 bg-white border border-red-200 rounded p-3">
+                                  <p className="text-xs text-red-700">
+                                    Location detection timed out. This might happen if:
+                                    <br />• GPS signal is weak
+                                    <br />• You're indoors or in a covered area
+                                    <br />• Network connection is slow
+                                  </p>
+                                  <button
+                                    onClick={handleGetCurrentLocation}
+                                    disabled={locationLoading}
+                                    className="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 rounded"
+                                  >
+                                    Try Again
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm text-green-800 font-medium flex items-center mb-2">
+                            <Navigation className="w-4 h-4 mr-1" />
+                            Location Detected Successfully
+                          </p>
+                          <div className="space-y-1">
+                            <p className="text-sm text-green-700">
+                              <span className="font-medium">Address:</span> {currentGeolocation?.address}
+                            </p>
+                            <p className="text-xs text-green-600">
+                              <span className="font-medium">Coordinates:</span> {currentGeolocation?.latitude.toFixed(6)}, {currentGeolocation?.longitude.toFixed(6)}
+                            </p>
+                            {currentGeolocation?.timestamp && (
+                              <p className="text-xs text-green-500">
+                                <span className="font-medium">Detected:</span> {new Date(currentGeolocation.timestamp).toLocaleString('en-IN', {
+                                  timeZone: 'Asia/Kolkata',
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {!isCheckedIn && (
+                          <div className="flex flex-col space-y-1 ml-2">
+                            <button
+                              onClick={handleGetCurrentLocation}
+                              disabled={locationLoading}
+                              className="text-green-600 hover:text-green-800 p-1"
+                              title="Update location"
+                            >
+                              {locationLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                              ) : (
+                                <RefreshCw className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setUseCurrentLocation(false);
+                                setCurrentGeolocation(null);
+                                setLocation("");
+                                // Clear saved location data
+                                if (typeof window !== "undefined") {
+                                  localStorage.removeItem("currentGeolocation");
+                                  localStorage.removeItem("useCurrentLocation");
+                                }
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1"
+                              title="Clear location"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!location && !useCurrentLocation && (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Please get your current location before checking in
+                    </p>
+                  )}
+                  
+                  
+                </div>
               </div>
               
               <div className="flex justify-center space-x-4">
@@ -594,6 +1058,7 @@ const CheckInOutApp: React.FC = () => {
                     disabled={loading}
                     className="flex items-center px-8 py-4 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
                   >
+      
                     {loading ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                     ) : (

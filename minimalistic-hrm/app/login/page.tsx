@@ -1,39 +1,31 @@
 
 
 "use client";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode"; // Import jwt-decode
+import { jwtDecode } from "jwt-decode";
 
 interface LoginForm {
   email: string;
   password: string;
-  role: string;
 }
 
 interface JwtPayload {
   role: string;
-  // Add other properties that might be in your token if needed
+  id: string;
 }
 
 const LoginPage = () => {
   const [formData, setFormData] = useState<LoginForm>({
     email: "",
     password: "",
-    role: "",
   });
 
   const [errors, setErrors] = useState<Partial<LoginForm>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const router = useRouter();
-
-  // Roles array - adjust 'value' if backend expects 'Administrator' instead of 'admin'
-  const roles = [
-    { value: "Admin", label: "Admin" },
-    { value: "User", label: "User" },
-  ];
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
@@ -50,17 +42,11 @@ const LoginPage = () => {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    if (!formData.role) {
-      newErrors.role = "Please select a role";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -73,61 +59,67 @@ const LoginPage = () => {
         [name]: undefined,
       }));
     }
-    setApiError(null); // Clear API error when user modifies input
+    setApiError(null);
   };
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  setIsLoading(true);
-  setApiError(null);
+    setIsLoading(true);
+    setApiError(null);
 
-  try {
-    const response = await axios.post(
-      "http://localhost:5000/api/checksession/access-control/login",
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/checksession/access-control/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData), // Only sending email and password now
+        }
+      );
 
-    // Check if we got a token and user in response (instead of response.data.success)
-    if (response.data.token && response.data.user) {
-      const { token, user } = response.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("userRole", user.role);
-      localStorage.setItem("userId", user.id);  // Note: using 'id' instead of '_id' based on your response
-      localStorage.setItem("username", user.username);
-      console.log("Login successful:", user);
-      const decodedToken: JwtPayload = jwtDecode(token);
-      console.log("Decoded Token:", decodedToken);
-      alert("Login successful!");
+      const responseData = await response.json();
 
-      // Navigate immediately based on role
-      if (decodedToken.role === "Admin") {
-        router.push("/admin");
-      } else if (decodedToken.role === "User") {
-        router.push("/users");
+      if (response.ok && responseData.token && responseData.user) {
+        const { token, user } = responseData;
+        
+        // Store user data in localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("userRole", user.role);
+        localStorage.setItem("userId", user.id);
+        localStorage.setItem("username", user.username);
+        localStorage.setItem("userEmail", user.email);
+        
+        console.log("Login successful:", user);
+        
+        // Decode token to get role information
+        const decodedToken: JwtPayload = jwtDecode(token);
+        console.log("Decoded Token:", decodedToken);
+        
+       
+
+        // Navigate based on user's role from the response
+        if (user.role === "Admin") {
+          router.push("/admin");
+        } else if (user.role === "User") {
+          router.push("/users");
+        } else {
+          setApiError("Unknown role detected.");
+        }
       } else {
-        setApiError("Unknown role detected.");
+        setApiError("Login failed. Invalid response from server.");
       }
-    } else {
-      setApiError("Login failed. Invalid response from server.");
+    } catch (error: any) {
+      setApiError("Login failed. Please check your credentials and try again.");
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error: any) {
-    setApiError(
-      error.response?.data?.message ||
-        "Login failed. Please check your credentials and try again."
-    );
-    console.error("Login error:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -204,39 +196,10 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
               )}
             </div>
 
-            <div>
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-colors ${
-                  errors.role ? "border-red-500 bg-red-50" : "border-gray-300"
-                }`}
-              >
-                <option value="">Select the role</option>
-                {roles.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
-              {errors.role && (
-                <p className="mt-1 text-sm text-red-600">{errors.role}</p>
-              )}
-            </div>
-
             {apiError && (
-              <p className="mt-2 text-sm text-red-600 text-center">
-                {apiError}
-              </p>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-sm text-red-600 text-center">{apiError}</p>
+              </div>
             )}
 
             <button
@@ -273,6 +236,12 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
               )}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Your role will be determined automatically after login
+            </p>
+          </div>
         </div>
       </div>
     </div>
