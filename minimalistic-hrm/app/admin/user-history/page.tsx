@@ -44,14 +44,7 @@ const UserHistoryDashboard: React.FC = () => {
     return localStorage.getItem("token");
   };
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchUsers(true); // Silent refresh
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
+  
 
   useEffect(() => {
     fetchUsers();
