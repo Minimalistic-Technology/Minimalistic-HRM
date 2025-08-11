@@ -278,7 +278,7 @@ const UserHistoryDashboard: React.FC = () => {
       console.log(`Fetching user sessions for userId: ${userId}`);
       
       // Try to get user sessions from the session endpoint first
-      const sessionResponse = await fetch(`${API_BASE_URL}/session/user/${userId}`, {
+      const sessionResponse = await fetch(`${API_BASE_URL}/history/${userId}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
