@@ -81,17 +81,7 @@ const SignupPage = () => {
       newErrors.email = 'Email is required';
     } else if (!isValidEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address (e.g., user@example.com)';
-    } else {
-      // Check if email already exists (optional - only if backend supports it)
-      try {
-        const emailExists = await checkEmailExists(formData.email);
-        if (emailExists) {
-          newErrors.email = 'An account with this email already exists';
-        }
-      } catch (error) {
-        // Continue without email check if API doesn't support it
-      }
-    }
+    } 
 
     // Password validation
     if (!formData.password) {
@@ -143,7 +133,7 @@ const SignupPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/checksession/access-control/signup', {
+      const response = await axios.post('http://localhost:5000/api/hrm/access-control/signup', {
         username: formData.fullname.trim(),
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
@@ -166,6 +156,7 @@ const SignupPage = () => {
           router.push('/login');
         }, 2000);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Signup failed:', error);
       

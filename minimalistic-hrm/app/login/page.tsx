@@ -4,7 +4,7 @@
 import { useState } from "react";
 
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
+// import { jwtDecode } from "jwt-decode";
 
 interface LoginForm {
   email: string;
@@ -72,7 +72,7 @@ const LoginPage = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/checksession/access-control/login",
+        "http://localhost:5000/api/hrm/access-control/login",
         {
           method: "POST",
           headers: {
@@ -89,16 +89,16 @@ const LoginPage = () => {
         
         // Store user data in localStorage
         localStorage.setItem("token", token);
-        localStorage.setItem("userRole", user.role);
-        localStorage.setItem("userId", user.id);
-        localStorage.setItem("username", user.username);
-        localStorage.setItem("userEmail", user.email);
+        // localStorage.setItem("userRole", user.role);
+        // localStorage.setItem("userId", user.id);
+        // localStorage.setItem("username", user.username);
+        // localStorage.setItem("userEmail", user.email);
         
         console.log("Login successful:", user);
         
         // Decode token to get role information
-        const decodedToken: JwtPayload = jwtDecode(token);
-        console.log("Decoded Token:", decodedToken);
+        // const decodedToken: JwtPayload = jwtDecode(token);
+        // console.log("Decoded Token:", decodedToken);
         
        
 
@@ -113,7 +113,7 @@ const LoginPage = () => {
       } else {
         setApiError("Login failed. Invalid response from server.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setApiError("Login failed. Please check your credentials and try again.");
       console.error("Login error:", error);
     } finally {

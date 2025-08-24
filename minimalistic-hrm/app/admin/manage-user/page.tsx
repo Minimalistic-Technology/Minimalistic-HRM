@@ -57,7 +57,7 @@ const UserManager: React.FC = () => {
   ];
 
   // API Base URL - adjust this to match your backend
-  const API_BASE_URL = 'http://localhost:5000/api/checksession';
+  const API_BASE_URL = 'http://localhost:5000/api/hrm';
 
   // Get auth token from localStorage or cookies
   const getAuthToken = (): string | null => {
