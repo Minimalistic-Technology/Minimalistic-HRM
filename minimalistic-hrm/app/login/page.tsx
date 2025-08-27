@@ -4,17 +4,15 @@
 import { useState } from "react";
 
 import { useRouter } from "next/navigation";
-// import { jwtDecode } from "jwt-decode";
+import { useAuth } from "../context/AuthContext";
+
 
 interface LoginForm {
   email: string;
   password: string;
 }
 
-interface JwtPayload {
-  role: string;
-  id: string;
-}
+
 
 const LoginPage = () => {
   const [formData, setFormData] = useState<LoginForm>({
@@ -26,6 +24,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const router = useRouter();
+  const {login} = useAuth();
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
@@ -86,19 +85,8 @@ const LoginPage = () => {
 
       if (response.ok && responseData.token && responseData.user) {
         const { token, user } = responseData;
+        login(user,token);
         
-        // Store user data in localStorage
-        localStorage.setItem("token", token);
-        // localStorage.setItem("userRole", user.role);
-        // localStorage.setItem("userId", user.id);
-        // localStorage.setItem("username", user.username);
-        // localStorage.setItem("userEmail", user.email);
-        
-        console.log("Login successful:", user);
-        
-        // Decode token to get role information
-        // const decodedToken: JwtPayload = jwtDecode(token);
-        // console.log("Decoded Token:", decodedToken);
         
        
 

@@ -539,9 +539,9 @@ const UserHistoryDashboard: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     User ID
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
@@ -578,11 +578,11 @@ const UserHistoryDashboard: React.FC = () => {
                         key={user._id}
                         className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                           <span className="bg-gray-100 px-2 py-1 rounded text-xs">
                             {user._id?.substring(0, 8)}...
                           </span>
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {user.username}

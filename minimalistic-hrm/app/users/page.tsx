@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
+import { formatTime, getAuthToken, getUserLocationDetails } from "../functions/helperFunctions";
+import { useAuth } from "../context/AuthContext";
 
 // Define interfaces
 interface AttendanceRecord {
@@ -71,12 +73,12 @@ const CheckInOutApp: React.FC = () => {
   );
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
   const [userName, setUserName] = useState<string>("");
-  const [location, setLocation] = useState<{
-    city: string;
-    state: string;
-    country: string;
-    ip: string;
-  }>({ city: "", state: "", country: "", ip: "" });
+  // const [location, setLocation] = useState<{
+  //   city: string;
+  //   state: string;
+  //   country: string;
+  //   ip: string;
+  // }>({ city: "", state: "", country: "", ip: "" });
 
   const [activeTab, setActiveTab] = useState<"dashboard" | "history">(
     "dashboard"
@@ -88,6 +90,8 @@ const CheckInOutApp: React.FC = () => {
   // const [autoCheckoutEnabled, setAutoCheckoutEnabled] = useState<boolean>(true);
   const [timeToMidnight, setTimeToMidnight] = useState<string>("");
   const router = useRouter();
+  const {user,token,location} = useAuth();
+
 
   // Refs for intervals
   const midnightCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,33 +100,7 @@ const CheckInOutApp: React.FC = () => {
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/hrm";
 
-  // Get auth token from localStorage (browser-safe)
-  const getAuthToken = (): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token");
-  };
-
-  // Get user's real IP address
-  const getUserLocationDetails = async (): Promise<object> => {
-    try {
-      const ipRes = await fetch("https://api.ipify.org?format=json");
-      const { ip } = await ipRes.json();
-
-      // Get location from IP
-      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-      const { city, region: state, country } = await geoRes.json();
-      setLocation({ city, ip, state, country });
-      // console.log(location)
-      return { city, ip, state, country };
-    } catch (error) {
-      console.warn("Failed to get real IP, using fallback:", error);
-      return { ip: "127.0.0.1" };
-    }
-  };
-
-  useEffect(() => {
-    getUserLocationDetails();
-  }, []);
+ 
   useEffect(() => {
     return () => {
       if (midnightCheckIntervalRef.current) {
@@ -134,30 +112,7 @@ const CheckInOutApp: React.FC = () => {
     };
   }, []);
 
-  // Setup/cleanup midnight check when check-in status changes
-  // useEffect(() => {
-  //   // setupAutoCheckoutTimer();
-  //   // setupCountdown();
-
-  //   return () => {
-  //     if (midnightCheckIntervalRef.current) {
-  //       clearTimeout(midnightCheckIntervalRef.current);
-  //     }
-  //     if (countdownIntervalRef.current) {
-  //       clearInterval(countdownIntervalRef.current);
-  //     }
-  //   };
-  // }, [isCheckedIn, currentSession, autoCheckoutEnabled]);
-
-  // Load auto checkout preference from localStorage
-  // useEffect(() => {
-  //   if (typeof window !== "undefined") {
-  //     // const savedPreference = localStorage.getItem("autoCheckoutEnabled");
-  //     if (savedPreference !== null) {
-  //       setAutoCheckoutEnabled(savedPreference === "true");
-  //     }
-  //   }
-  // }, []);
+  
 
   useEffect(() => {
     console.log(isCheckedIn, history[history.length - 1]);
@@ -167,8 +122,13 @@ const CheckInOutApp: React.FC = () => {
       setIsCheckedIn(history[history.length - 1]?.checkOut === null);
   }, [history, error]);
 
-  const fetchUserHistory = async (token: string) => {
+  const fetchUserHistory = async () => {
     try {
+      console.log(token);
+       if (!token) {
+    console.warn("No token, skipping history fetch");
+    return;
+  }
       const historyResponse = await axios.get(
         `${API_BASE_URL}/HistoryByUserId`,
         {
@@ -195,47 +155,9 @@ const CheckInOutApp: React.FC = () => {
 
       console.log("Processing history data:", historyData);
 
-      // Find active session (no checkOut time)
-      // let activeSession: CurrentSession | null = null;
-      // const formattedHistory: AttendanceRecord[] = [];
+      
 
-      historyData[0]?.history.forEach((entry: any, index: number) => {
-        // const sessionId = entry._id || entry.id || `${userIdParam}_${index}`;
-        const checkInTime =
-          entry.checkIn || entry.checkInTime || entry.createdAt;
-        const checkOutTime = entry.checkOut || entry.checkOutTime || null;
-
-        if (!checkInTime) {
-          console.warn("Skipping entry without checkIn time:", entry);
-          return;
-        }
-
-        const checkInDate = new Date(checkInTime.dateTime);
-
-        // Check if this is an active session (no checkout)
-        // if (!checkOutTime && !activeSession) {
-        //   activeSession = {
-        //     id: "",
-        //     checkInTime: checkInDate,
-        //     date: formatDate(checkInDate),
-        //     location: "",
-        //   };
-        // }
-
-        // Add to formatted history
-        // formattedHistory.push({
-        //   _id: "",
-        //   date: formatDate(checkInDate),
-        //   checkIn: formatTime(checkInDate),
-        //   checkOut: checkOutTime
-        //     ? formatTime(new Date(checkOutTime.dateTime))
-        //     : "-",
-        //   duration: checkOutTime
-        //     ? calculateDuration(checkInDate, new Date(checkOutTime.dateTime))
-        //     : "-",
-        //   location: "",
-        // });
-      });
+      
     } catch (historyError) {
       console.error("Failed to fetch history:", historyError);
       const error = historyError as AxiosError<ApiError>;
@@ -257,7 +179,7 @@ const CheckInOutApp: React.FC = () => {
 
   // Simplified fetch user details and history
   const fetchUserDataAndHistory = async (
-    token: string
+    
     // userIdParam: string
   ): Promise<void> => {
     try {
@@ -272,7 +194,7 @@ const CheckInOutApp: React.FC = () => {
 
       setUserName(data?.username);
 
-      fetchUserHistory(token);
+      fetchUserHistory();
     } catch (error) {
       console.error("Failed to fetch user data:", error);
       throw error;
@@ -280,21 +202,25 @@ const CheckInOutApp: React.FC = () => {
   };
 
   useEffect(() => {
+    if(!token) return
     if (error !== "Authentication token not found. Please log in.") {
       const fetchData = async () => {
         try {
           setLoading(true);
           setError(null);
 
-          const token = getAuthToken();
+          // const token = getAuthToken();
           if (!token) {
+        console.log("here")
+
             setError("Authentication token not found. Please log in.");
             return;
           }
 
           // console.log("Starting data fetch for user:", userId);
 
-          await fetchUserDataAndHistory(token);
+          await fetchUserDataAndHistory();
+          
 
           // setInitialDataLoaded(true);
           console.log("Data fetch completed successfully");
@@ -317,32 +243,15 @@ const CheckInOutApp: React.FC = () => {
 
       fetchData();
     }
-  }, []);
+  }, [token]);
   useEffect(() => {
-    if (error === "Authentication token not found. Please log in.") {
+    if (!user) {
       router.replace("/login");
     }
-  }, [error]);
-  if (error === "Authentication token not found. Please log in.") {
-    return;
-  }
-  const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    });
-  };
-
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: "Asia/Kolkata",
-    });
-  };
+  }, [user]);
+  // if (error === "Authentication token not found. Please log in.") {
+  //   return;
+  // }
 
   const calculateDuration = (start: Date, end: Date): string => {
     const diff = end.getTime() - start.getTime();
@@ -361,9 +270,10 @@ const CheckInOutApp: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const token = getAuthToken();
+      // const token = getAuthToken();
 
       if (!token) {
+        console.log("here")
         setError("Authentication token not found. Please log in.");
         return;
       }
@@ -391,7 +301,7 @@ const CheckInOutApp: React.FC = () => {
       console.log("Check-in response:", response.data);
 
       setIsCheckedIn(true);
-      fetchUserHistory(token);
+      fetchUserHistory();
 
       setError(null);
     } catch (err) {
@@ -415,9 +325,10 @@ const CheckInOutApp: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const token = getAuthToken();
+      // const token = getAuthToken();
 
       if (!token) {
+        console.log("here")
         setError("Authentication token not found. Please log in.");
         return;
       }
@@ -446,7 +357,7 @@ const CheckInOutApp: React.FC = () => {
 
       const checkOutTime = new Date();
 
-      fetchUserHistory(token);
+      fetchUserHistory();
       setCurrentSession(null);
       setIsCheckedIn(false);
 
@@ -465,57 +376,7 @@ const CheckInOutApp: React.FC = () => {
   const handleTabChange = (tab: "dashboard" | "history"): void => {
     setActiveTab(tab);
   };
-
-  const handleLogout = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      const token = getAuthToken();
-
-      // Clear localStorage first
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
-
-      // Try to call logout API if token exists
-      // if (token) {
-      //   try {
-      //     await axios.post(
-      //       `${API_BASE_URL.replace("/checksession", "")}/auth/logout`,
-      //       {},
-      //       {
-      //         headers: {
-      //           Authorization: `Bearer ${token}`,
-      //           "Content-Type": "application/json",
-      //         },
-      //         withCredentials: true,
-      //       }
-      //     );
-      //   } catch (apiError) {
-      //     console.warn("Logout API call failed:", apiError);
-      //   }
-      // }
-
-      // Clear timers
-      if (midnightCheckIntervalRef.current) {
-        clearTimeout(midnightCheckIntervalRef.current);
-      }
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-
-      setError(null);
-      window.location.href = "/login";
-    } catch (err) {
-      // Even if logout fails, clear everything and redirect
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
-      setError(null);
-      window.location.href = "/login";
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   // Show loading state while initial data is being fetched
   if (loading) {
@@ -547,51 +408,13 @@ const CheckInOutApp: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-xl mb-8 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
-                <UserIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {userName || "Loading User..."}
-                </h1>
-                <p className="text-gray-600">
-                  {location.city && (
-                    <span className="flex items-center">
-                      <Navigation className="w-4 h-4 mr-1 text-blue-500" />
-                      {location?.city}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="text-right space-y-2">
-              <p className="text-sm text-gray-500">Today</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {formatDate(new Date())}
-              </p>
-
-              <button
-                onClick={handleLogout}
-                disabled={loading}
-                className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div className="bg-white rounded-2xl shadow-xl mb-8">
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => handleTabChange("dashboard")}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "dashboard"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50"
+                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-gray-200 shadow-xl"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -599,10 +422,12 @@ const CheckInOutApp: React.FC = () => {
               Dashboard
             </button>
             <button
-              onClick={() => handleTabChange("history")}
+              onClick={() => {handleTabChange("history")
+                fetchUserHistory();
+              }}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "history"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50"
+                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-gray-200 shadow-xl"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -639,10 +464,10 @@ const CheckInOutApp: React.FC = () => {
                     <div className="text-center">
                       <p className="text-sm text-green-600 mb-1">Location</p>
                       <p className="text-lg font-semibold text-green-800 flex items-center justify-center">
-                        {location.city && (
+                        {location?.city && (
                           <Navigation className="w-4 h-4 mr-1 text-blue-500" />
                         )}
-                        {location.city}
+                        {location?.city}
                       </p>
                     </div>
                   </div>
@@ -656,7 +481,7 @@ const CheckInOutApp: React.FC = () => {
                 </label>
 
                 <div className="space-y-4">
-                  {!location.city ? (
+                  {!location?.city ? (
                     <div>
                       <button
                         onClick={getUserLocationDetails}
@@ -725,7 +550,7 @@ const CheckInOutApp: React.FC = () => {
                 </div>
               </div>
               {history.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-6">
                   <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">No attendance history yet</p>
                   <p className="text-sm text-gray-400 mt-2">
@@ -734,7 +559,7 @@ const CheckInOutApp: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {history?.map((record) => {
+                  {/* {history?.map((record) => {
                     const formatDuration = (duration: any) => {
                       if (duration > 59) {
                         if (duration > 24 * 60) {
@@ -757,107 +582,120 @@ const CheckInOutApp: React.FC = () => {
                         60
                     );
 
-                    return (
-                      <div
-                        key={record._id}
-                        className="bg-gray-50 rounded-xl p-10 hover:bg-gray-100 transition-colors min-w-[700px]"
-                      >
-                        <div className="flex items-center justify-between mb-5 ">
-                          <div className="flex items-center pl-20 ">
-                            <Calendar className="w-5 h-5 text-indigo-600" />
-                            <span className="font-semibold text-gray-900 pl-1">
-                              {new Date(
-                                record.checkIn?.dateTime
-                              ).toLocaleDateString()}
-                            </span>
-                            {record.checkOut === null ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Active
-                              </span>
-                            ) : (
-                              <>
-                                <Calendar className="w-5 h-5 text-indigo-600 ml-40" />
-                                <span className="font-semibold inline-block min-w-10 pl-1 text-gray-900">
-                                  {new Date(
-                                    record.checkOut?.dateTime
-                                  ).toLocaleDateString()}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-600">
-                              {record.checkIn?.city}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                          <div>
-                            <p className="text-sm text-gray-500 mb-3">
-                              Check In
-                            </p>
-                            <p className="font-semibold text-green-600">
-                              {record.checkIn?.dateTime
-                                ? formatTime(new Date(record.checkIn.dateTime))
-                                : "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500 mb-3">
-                              Check Out
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                record.checkOut === "-"
-                                  ? "text-gray-400"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {record.checkOut?.dateTime
-                                ? formatTime(new Date(record.checkOut.dateTime))
-                                : "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">
-                              Duration
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                record.duration === "-"
-                                  ? "text-gray-400"
-                                  : "text-indigo-600"
-                              }`}
-                            >
-                              {`${
-                                formatDuration(duration).days
-                                  ? `${formatDuration(duration).days + " d"}`
-                                  : ""
-                              }
-                              ${
-                                formatDuration(duration).hours
-                                  ? `${formatDuration(duration).hours + " h"}`
-                                  : ""
-                              }
-                              ${
-                                formatDuration(duration).minutes
-                                  ? `${formatDuration(duration).minutes + " m"}`
-                                  : ""
-                              }
-                              ${
-                                formatDuration(duration).duration ||
-                                formatDuration(duration).duration === 0
-                                  ? `${formatDuration(duration).duration} m`
-                                  : ""
-                              }
-                              `}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                    return ( */}
+                      <div className="overflow-x-auto">
+  <table className="min-w-[700px] border-collapse border border-gray-200 rounded-lg">
+    <thead className="bg-gray-100">
+      <tr>
+        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Check-In Date</th>
+        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Check-Out Date</th>
+        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Location</th>
+        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Check-In Time</th>
+        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Check-Out Time</th>
+        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Duration</th>
+        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {history?.map((record) => {
+        const formatDuration = (duration: number) => {
+          if (duration > 59) {
+            if (duration > 24 * 60) {
+              const days = Math.floor(duration / 60 / 24);
+              const hours = Math.round(duration / 60) % 24;
+              return { days, hours };
+            } else {
+              const hours = Math.floor(duration / 60);
+              const minutes = Math.floor(duration % 60);
+              return { hours, minutes };
+            }
+          } else {
+            return { duration };
+          }
+        };
+
+        const duration = Math.floor(
+          (new Date(record?.checkOut?.dateTime).getTime() -
+            new Date(record?.checkIn?.dateTime).getTime()) /
+            1000 /
+            60
+        );
+
+        const durationFormatted = `
+          ${formatDuration(duration).days ? `${formatDuration(duration).days} d ` : ""}
+          ${formatDuration(duration).hours ? `${formatDuration(duration).hours} h ` : ""}
+          ${formatDuration(duration).minutes ? `${formatDuration(duration).minutes} m ` : ""}
+          ${
+            formatDuration(duration).duration ||
+            formatDuration(duration).duration === 0
+              ? `${formatDuration(duration).duration} m`
+              : ""
+          }
+        `;
+
+        return (
+          <tr key={record._id} className="border-t hover:bg-gray-50">
+            {/* Check-in Date */}
+            <td className="px-4 py-2 text-sm font-medium text-gray-900">
+              {new Date(record.checkIn?.dateTime).toLocaleDateString()}
+            </td>
+
+            {/* Check-out Date */}
+            <td className="px-4 py-2 text-sm font-medium text-gray-900">
+              {record.checkOut
+                ? new Date(record.checkOut?.dateTime).toLocaleDateString()
+                : "-"}
+            </td>
+
+            {/* Location */}
+            <td className="px-4 py-2 text-sm text-gray-600">
+              {record.checkIn?.city}
+            </td>
+
+            {/* Check-in Time */}
+            <td className="px-4 py-2 text-sm text-green-600 text-center">
+              {record.checkIn?.dateTime
+                ? formatTime(new Date(record.checkIn.dateTime))
+                : "-"}
+            </td>
+
+            {/* Check-out Time */}
+            <td
+              className={`px-4 py-2 text-sm text-center ${
+                record.checkOut ? "text-red-600" : "text-gray-400"
+              }`}
+            >
+              {record.checkOut?.dateTime
+                ? formatTime(new Date(record.checkOut.dateTime))
+                : "-"}
+            </td>
+
+            {/* Duration */}
+            <td className="px-4 py-2 text-sm font-semibold text-indigo-600 text-center">
+              {durationFormatted}
+            </td>
+
+            {/* Status */}
+            <td className="px-4 py-2 text-sm text-center">
+              {record.checkOut === null ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                  Completed
+                </span>
+              )}
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+
+                    {/* ); */}
+                  {/* })} */}
                 </div>
               )}
             </div>
