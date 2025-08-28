@@ -5,13 +5,27 @@ import { LogOut, Navigation, UserIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { formatDate, getAuthToken } from "../functions/helperFunctions";
 import { useAuth } from "../context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store/store";
+import { usePathname, useRouter } from "next/navigation";
+import { setLocation, setUser } from "../store/authSlice";
+
 
 const Navbar = () => {
+const router = useRouter()
+const pathname = usePathname()
+const dispatch = useDispatch()
 
+  const {location,user} = useSelector((store:RootState)=>store.auth)
 
-  const {logout,location,user} = useAuth()
-
-
+const logout = ()=>{
+  localStorage.removeItem("user")
+  localStorage.removeItem("token");
+  // localStorage.removeItem("location");
+dispatch(setUser({user:{},token:""}))
+dispatch(setLocation({}))
+  router.replace("/login");
+}
 
 
   return (
@@ -26,7 +40,7 @@ const Navbar = () => {
               {user?.username }
             </h1>
             <p className="text-gray-600">
-              {user && location?.city && (
+              {!(pathname==="/login") && user && location?.city && (
                 <span className="flex items-center">
                   <Navigation className="w-4 h-4 mr-1 text-blue-500" />
                   {location?.city}
@@ -41,7 +55,7 @@ const Navbar = () => {
             {formatDate(new Date())}
           </p>
 
-          {user && <button
+          {!(pathname==="/login") && user && <button
             onClick={logout}
             // disabled={loading}
             className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400"

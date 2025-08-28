@@ -16,8 +16,15 @@ import {
 } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import { formatTime, getAuthToken, getUserLocationDetails } from "../functions/helperFunctions";
+import {
+  formatTime,
+  getAuthToken,
+  getUserLocationDetails,
+} from "../functions/helperFunctions";
 import { useAuth } from "../context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store/store";
+import { setLocation, setUser } from "../store/authSlice";
 
 // Define interfaces
 interface AttendanceRecord {
@@ -73,12 +80,7 @@ const CheckInOutApp: React.FC = () => {
   );
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
   const [userName, setUserName] = useState<string>("");
-  // const [location, setLocation] = useState<{
-  //   city: string;
-  //   state: string;
-  //   country: string;
-  //   ip: string;
-  // }>({ city: "", state: "", country: "", ip: "" });
+  
 
   const [activeTab, setActiveTab] = useState<"dashboard" | "history">(
     "dashboard"
@@ -90,8 +92,11 @@ const CheckInOutApp: React.FC = () => {
   // const [autoCheckoutEnabled, setAutoCheckoutEnabled] = useState<boolean>(true);
   const [timeToMidnight, setTimeToMidnight] = useState<string>("");
   const router = useRouter();
-  const {user,token,location} = useAuth();
-
+  // const {user,token} = useAuth();
+  const { location, token, user } = useSelector(
+    (store: RootState) => store.auth
+  );
+  const dispatch = useDispatch();
 
   // Refs for intervals
   const midnightCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,7 +105,6 @@ const CheckInOutApp: React.FC = () => {
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/hrm";
 
- 
   useEffect(() => {
     return () => {
       if (midnightCheckIntervalRef.current) {
@@ -111,24 +115,64 @@ const CheckInOutApp: React.FC = () => {
       }
     };
   }, []);
+useEffect(() => {
+  const fetchStatus = async () => {
+   if(!history) return
+const lastHistory = history[history.length-1]
+    if (history && lastHistory?.checkOut===null) {
+      const lastDate = new Date(lastHistory.checkIn.dateTime);
+      const endOfDay = new Date(lastDate);
+      endOfDay.setHours(23, 59, 59, 999);
 
-  
+      if (new Date() > endOfDay) {
+        // Session expired → show Check In
+        setIsCheckedIn(false);
+        return;
+      }
+      
+      // Still same day → show Checkout
+      // setStatus("checkedIn");
+      setIsCheckedIn(true);
+    } else {
+      setIsCheckedIn(false);
+      // setStatus("checkedOut");
+    }
+  };
+
+  fetchStatus();
+}, [history]);
+
+
+useEffect(() => {
+  const userString = localStorage.getItem("user");
+  const token = localStorage.getItem("token");
+  const locationString = localStorage.getItem("location");
+
+  const user = userString ? JSON.parse(userString) : null;
+  const location = locationString ? JSON.parse(locationString) : null;
+
+  if (user && token && location) {
+    dispatch(setUser({ user, token }));
+    dispatch(setLocation(location));
+  }
+}, [dispatch]);
+
 
   useEffect(() => {
-    console.log(isCheckedIn, history[history.length - 1]);
+    console.log(isCheckedIn, history && history[history?.length - 1]);
   }, [isCheckedIn, history]);
   useEffect(() => {
     if (error !== "Authentication token not found. Please log in.")
-      setIsCheckedIn(history[history.length - 1]?.checkOut === null);
+      setIsCheckedIn(history && history[history.length - 1]?.checkOut === null);
   }, [history, error]);
 
   const fetchUserHistory = async () => {
     try {
       console.log(token);
-       if (!token) {
-    console.warn("No token, skipping history fetch");
-    return;
-  }
+      if (!token) {
+        console.warn("No token, skipping history fetch");
+        return;
+      }
       const historyResponse = await axios.get(
         `${API_BASE_URL}/HistoryByUserId`,
         {
@@ -141,7 +185,7 @@ const CheckInOutApp: React.FC = () => {
       );
 
       console.log("History response:", historyResponse.data);
-      setHistory(historyResponse.data[0].history);
+      setHistory(historyResponse.data[0]?.history);
 
       let historyData = [];
 
@@ -154,10 +198,6 @@ const CheckInOutApp: React.FC = () => {
       }
 
       console.log("Processing history data:", historyData);
-
-      
-
-      
     } catch (historyError) {
       console.error("Failed to fetch history:", historyError);
       const error = historyError as AxiosError<ApiError>;
@@ -178,10 +218,8 @@ const CheckInOutApp: React.FC = () => {
   };
 
   // Simplified fetch user details and history
-  const fetchUserDataAndHistory = async (
-    
-    // userIdParam: string
-  ): Promise<void> => {
+  const fetchUserDataAndHistory = async (): // userIdParam: string
+  Promise<void> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/access-control/me`, {
         headers: {
@@ -202,8 +240,9 @@ const CheckInOutApp: React.FC = () => {
   };
 
   useEffect(() => {
-    if(!token) return
+    if (!token) return;
     if (error !== "Authentication token not found. Please log in.") {
+
       const fetchData = async () => {
         try {
           setLoading(true);
@@ -211,7 +250,7 @@ const CheckInOutApp: React.FC = () => {
 
           // const token = getAuthToken();
           if (!token) {
-        console.log("here")
+            console.log("here");
 
             setError("Authentication token not found. Please log in.");
             return;
@@ -220,7 +259,6 @@ const CheckInOutApp: React.FC = () => {
           // console.log("Starting data fetch for user:", userId);
 
           await fetchUserDataAndHistory();
-          
 
           // setInitialDataLoaded(true);
           console.log("Data fetch completed successfully");
@@ -273,14 +311,19 @@ const CheckInOutApp: React.FC = () => {
       // const token = getAuthToken();
 
       if (!token) {
-        console.log("here")
+        console.log("here");
         setError("Authentication token not found. Please log in.");
         return;
       }
 
       const history = {
         // userId: userId,
-        checkIn: location,
+        checkIn: {
+          city:location.city,
+          state:location.state?location.state :"",
+          country:location.country,
+          ip:location.ip?location.ip :"",
+        },
         checkOut: null,
       };
 
@@ -328,7 +371,7 @@ const CheckInOutApp: React.FC = () => {
       // const token = getAuthToken();
 
       if (!token) {
-        console.log("here")
+        console.log("here");
         setError("Authentication token not found. Please log in.");
         return;
       }
@@ -376,7 +419,6 @@ const CheckInOutApp: React.FC = () => {
   const handleTabChange = (tab: "dashboard" | "history"): void => {
     setActiveTab(tab);
   };
-  
 
   // Show loading state while initial data is being fetched
   if (loading) {
@@ -422,8 +464,9 @@ const CheckInOutApp: React.FC = () => {
               Dashboard
             </button>
             <button
-              onClick={() => {handleTabChange("history")
-                fetchUserHistory();
+              onClick={() => {
+                handleTabChange("history");
+                // fetchUserHistory();
               }}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "history"
@@ -432,7 +475,7 @@ const CheckInOutApp: React.FC = () => {
               }`}
             >
               <History className="w-5 h-5 inline-block mr-2" />
-              History ({history.length})
+              History ({history?.length})
             </button>
           </div>
 
@@ -497,7 +540,7 @@ const CheckInOutApp: React.FC = () => {
                     </div>
                   )}
 
-                  {!location.city && (
+                  {!location?.city && (
                     <p className="text-sm text-gray-500 text-center py-4">
                       Please get your current location before checking in
                     </p>
@@ -509,7 +552,7 @@ const CheckInOutApp: React.FC = () => {
                 {!isCheckedIn ? (
                   <button
                     onClick={handleCheckIn}
-                    disabled={loading || !location.city}
+                    disabled={loading || !location?.city}
                     className="flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {loading ? (
@@ -583,48 +626,74 @@ const CheckInOutApp: React.FC = () => {
                     );
 
                     return ( */}
-                      <div className="overflow-x-auto">
-  <table className="min-w-[700px] border-collapse border border-gray-200 rounded-lg">
-    <thead className="bg-gray-100">
-      <tr>
-        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Check-In Date</th>
-        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Check-Out Date</th>
-        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Location</th>
-        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Check-In Time</th>
-        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Check-Out Time</th>
-        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Duration</th>
-        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {history?.map((record) => {
-        const formatDuration = (duration: number) => {
-          if (duration > 59) {
-            if (duration > 24 * 60) {
-              const days = Math.floor(duration / 60 / 24);
-              const hours = Math.round(duration / 60) % 24;
-              return { days, hours };
-            } else {
-              const hours = Math.floor(duration / 60);
-              const minutes = Math.floor(duration % 60);
-              return { hours, minutes };
-            }
-          } else {
-            return { duration };
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[700px] border-collapse border border-gray-200 rounded-lg">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                            Check-In Date
+                          </th>
+                          <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                            Check-Out Date
+                          </th>
+                          <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                            Location
+                          </th>
+                          <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">
+                            Check-In Time
+                          </th>
+                          <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">
+                            Check-Out Time
+                          </th>
+                          <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">
+                            Duration
+                          </th>
+                          <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {history?.map((record) => {
+                          const formatDuration = (duration: number) => {
+                            if (duration > 59) {
+                              if (duration > 24 * 60) {
+                                const days = Math.floor(duration / 60 / 24);
+                                const hours = Math.round(duration / 60) % 24;
+                                return { days, hours };
+                              } else {
+                                const hours = Math.floor(duration / 60);
+                                const minutes = Math.floor(duration % 60);
+                                return { hours, minutes };
+                              }
+                            } else {
+                              return { duration };
+                            }
+                          };
+
+                          const duration = Math.floor(
+                            (new Date(record?.checkOut?.dateTime).getTime() -
+                              new Date(record?.checkIn?.dateTime).getTime()) /
+                              1000 /
+                              60
+                          );
+
+                          const durationFormatted = `
+          ${
+            formatDuration(duration).days
+              ? `${formatDuration(duration).days} d `
+              : ""
           }
-        };
-
-        const duration = Math.floor(
-          (new Date(record?.checkOut?.dateTime).getTime() -
-            new Date(record?.checkIn?.dateTime).getTime()) /
-            1000 /
-            60
-        );
-
-        const durationFormatted = `
-          ${formatDuration(duration).days ? `${formatDuration(duration).days} d ` : ""}
-          ${formatDuration(duration).hours ? `${formatDuration(duration).hours} h ` : ""}
-          ${formatDuration(duration).minutes ? `${formatDuration(duration).minutes} m ` : ""}
+          ${
+            formatDuration(duration).hours
+              ? `${formatDuration(duration).hours} h `
+              : ""
+          }
+          ${
+            formatDuration(duration).minutes
+              ? `${formatDuration(duration).minutes} m `
+              : ""
+          }
           ${
             formatDuration(duration).duration ||
             formatDuration(duration).duration === 0
@@ -633,68 +702,81 @@ const CheckInOutApp: React.FC = () => {
           }
         `;
 
-        return (
-          <tr key={record._id} className="border-t hover:bg-gray-50">
-            {/* Check-in Date */}
-            <td className="px-4 py-2 text-sm font-medium text-gray-900">
-              {new Date(record.checkIn?.dateTime).toLocaleDateString()}
-            </td>
+                          return (
+                            <tr
+                              key={record._id}
+                              className="border-t hover:bg-gray-50"
+                            >
+                              {/* Check-in Date */}
+                              <td className="px-4 py-2 text-sm font-medium text-gray-900">
+                                {new Date(
+                                  record.checkIn?.dateTime
+                                ).toLocaleDateString()}
+                              </td>
 
-            {/* Check-out Date */}
-            <td className="px-4 py-2 text-sm font-medium text-gray-900">
-              {record.checkOut
-                ? new Date(record.checkOut?.dateTime).toLocaleDateString()
-                : "-"}
-            </td>
+                              {/* Check-out Date */}
+                              <td className="px-4 py-2 text-sm font-medium text-gray-900">
+                                {record.checkOut
+                                  ? new Date(
+                                      record.checkOut?.dateTime
+                                    ).toLocaleDateString()
+                                  : "-"}
+                              </td>
 
-            {/* Location */}
-            <td className="px-4 py-2 text-sm text-gray-600">
-              {record.checkIn?.city}
-            </td>
+                              {/* Location */}
+                              <td className="px-4 py-2 text-sm text-gray-600">
+                                {record.checkIn?.city}
+                              </td>
 
-            {/* Check-in Time */}
-            <td className="px-4 py-2 text-sm text-green-600 text-center">
-              {record.checkIn?.dateTime
-                ? formatTime(new Date(record.checkIn.dateTime))
-                : "-"}
-            </td>
+                              {/* Check-in Time */}
+                              <td className="px-4 py-2 text-sm text-green-600 text-center">
+                                {record.checkIn?.dateTime
+                                  ? formatTime(
+                                      new Date(record.checkIn.dateTime)
+                                    )
+                                  : "-"}
+                              </td>
 
-            {/* Check-out Time */}
-            <td
-              className={`px-4 py-2 text-sm text-center ${
-                record.checkOut ? "text-red-600" : "text-gray-400"
-              }`}
-            >
-              {record.checkOut?.dateTime
-                ? formatTime(new Date(record.checkOut.dateTime))
-                : "-"}
-            </td>
+                              {/* Check-out Time */}
+                              <td
+                                className={`px-4 py-2 text-sm text-center ${
+                                  record.checkOut
+                                    ? "text-red-600"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {record.checkOut?.dateTime
+                                  ? formatTime(
+                                      new Date(record.checkOut.dateTime)
+                                    )
+                                  : "-"}
+                              </td>
 
-            {/* Duration */}
-            <td className="px-4 py-2 text-sm font-semibold text-indigo-600 text-center">
-              {durationFormatted}
-            </td>
+                              {/* Duration */}
+                              <td className="px-4 py-2 text-sm font-semibold text-indigo-600 text-center">
+                                {durationFormatted}
+                              </td>
 
-            {/* Status */}
-            <td className="px-4 py-2 text-sm text-center">
-              {record.checkOut === null ? (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
-                  Completed
-                </span>
-              )}
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
+                              {/* Status */}
+                              <td className="px-4 py-2 text-sm text-center">
+                                {record.checkOut === null ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Active
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                                    Completed
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
-                    {/* ); */}
+                  {/* ); */}
                   {/* })} */}
                 </div>
               )}

@@ -5,6 +5,10 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { useDispatch } from "react-redux";
+import { setLocation, setUser } from "../store/authSlice";
+import { getUserLocationDetails } from "../functions/helperFunctions";
+import { Location } from "../types";
 
 
 interface LoginForm {
@@ -24,7 +28,8 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const router = useRouter();
-  const {login} = useAuth();
+  // const {login} = useAuth();
+  const dispatch = useDispatch()
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};
@@ -85,11 +90,11 @@ const LoginPage = () => {
 
       if (response.ok && responseData.token && responseData.user) {
         const { token, user } = responseData;
-        login(user,token);
         
+        dispatch(setUser({user,token}))
+        const loc:Location = await getUserLocationDetails();
+               dispatch(setLocation(loc));
         
-       
-
         // Navigate based on user's role from the response
         if (user.role === "Admin") {
           router.push("/admin");
