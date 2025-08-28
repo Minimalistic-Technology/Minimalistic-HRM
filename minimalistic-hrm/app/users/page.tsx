@@ -451,13 +451,13 @@ useEffect(() => {
         )}
 
         <div className="bg-white rounded-2xl shadow-xl mb-8">
-          <div className="flex border-b border-gray-200">
+ <div className="flex border-b border-gray-200">
             <button
               onClick={() => handleTabChange("dashboard")}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "dashboard"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-gray-200 shadow-xl"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-white shadow-xl"
+                  : "text-gray-500 hover:text-gray-700 bg-gray-200"
               }`}
             >
               <Clock className="w-5 h-5 inline-block mr-2" />
@@ -470,15 +470,14 @@ useEffect(() => {
               }}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "history"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-gray-200 shadow-xl"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-white shadow-xl"
+                  : "text-gray-500 hover:text-gray-700 bg-gray-200"
               }`}
             >
               <History className="w-5 h-5 inline-block mr-2" />
-              History ({history?.length})
+              History 
             </button>
           </div>
-
           {activeTab === "dashboard" && (
             <div className="p-8">
               <div className="text-center mb-8">
