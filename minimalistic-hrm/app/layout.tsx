@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
-import { AuthProvider } from "./context/AuthContext";
-import { Provider } from "react-redux";
-import { store } from "./store/store";
+// import { AuthProvider } from "./context/AuthContext";
+// import { Provider } from "react-redux";
+// import { store } from "./store/store";
+
+// import LocationProvider from "./LocationProvider";
 import ReduxProvider from "./ReduxProvider";
-import LocationProvider from "./LocationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

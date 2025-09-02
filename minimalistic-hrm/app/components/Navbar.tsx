@@ -1,9 +1,9 @@
 "use client"
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { LogOut, Navigation, UserIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { formatDate, getAuthToken } from "../functions/helperFunctions";
-import { useAuth } from "../context/AuthContext";
+import React from "react";
+import { formatDate } from "../functions/helperFunctions";
+// import  from "../context/AuthContext";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store/store";
 import { usePathname, useRouter } from "next/navigation";
