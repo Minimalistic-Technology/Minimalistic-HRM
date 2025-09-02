@@ -1,14 +1,15 @@
 
 
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setLocation, setUser } from "../store/authSlice";
 import { getUserLocationDetails } from "../functions/helperFunctions";
 import { Location } from "../types";
+import { RootState } from "../store/store";
 
 
 interface LoginForm {
@@ -30,6 +31,14 @@ const LoginPage = () => {
   const router = useRouter();
   // const {login} = useAuth();
   const dispatch = useDispatch()
+  const token = localStorage.getItem("token");
+
+
+  useEffect(()=>{
+    console.log(token)
+    if(token)
+      router.replace("/users")
+  },[token,router])
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginForm> = {};

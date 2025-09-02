@@ -80,7 +80,6 @@ const CheckInOutApp: React.FC = () => {
   );
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
   const [userName, setUserName] = useState<string>("");
-  
 
   const [activeTab, setActiveTab] = useState<"dashboard" | "history">(
     "dashboard"
@@ -115,56 +114,57 @@ const CheckInOutApp: React.FC = () => {
       }
     };
   }, []);
-useEffect(() => {
-  const fetchStatus = async () => {
-   if(!history) return
-const lastHistory = history[history.length-1]
-    if (history && lastHistory?.checkOut===null) {
-      const lastDate = new Date(lastHistory.checkIn.dateTime);
-      const endOfDay = new Date(lastDate);
-      endOfDay.setHours(23, 59, 59, 999);
+  useEffect(() => {
+    const fetchStatus = async () => {
+      if (!history) return;
+      const lastHistory = history[history.length - 1];
+      console.log(lastHistory)
+      if (history && lastHistory?.checkOut === null) {
+        const lastDate = new Date(lastHistory.checkIn.dateTime);
+        const endOfDay = new Date(lastDate);
+        console.log(endOfDay,new Date())
+        endOfDay.setHours(23, 59, 59, 999);
 
-      if (new Date() > endOfDay) {
-        // Session expired → show Check In
+        if (new Date() > endOfDay) {
+          // Session expired → show Check In
+          setIsCheckedIn(false);
+          console.log(isCheckedIn)
+          return;
+        }
+
+        // Still same day → show Checkout
+        // setStatus("checkedIn");
+        setIsCheckedIn(true);
+      } else {
         setIsCheckedIn(false);
-        return;
+        // setStatus("checkedOut");
       }
-      
-      // Still same day → show Checkout
-      // setStatus("checkedIn");
-      setIsCheckedIn(true);
-    } else {
-      setIsCheckedIn(false);
-      // setStatus("checkedOut");
+    };
+
+    fetchStatus();
+  }, [history]);
+
+  useEffect(() => {
+    const userString = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+    const locationString = localStorage.getItem("location");
+
+    const user = userString ? JSON.parse(userString) : null;
+    const location = locationString ? JSON.parse(locationString) : null;
+
+    if (user && token && location) {
+      dispatch(setUser({ user, token }));
+      dispatch(setLocation(location));
     }
-  };
-
-  fetchStatus();
-}, [history]);
-
-
-useEffect(() => {
-  const userString = localStorage.getItem("user");
-  const token = localStorage.getItem("token");
-  const locationString = localStorage.getItem("location");
-
-  const user = userString ? JSON.parse(userString) : null;
-  const location = locationString ? JSON.parse(locationString) : null;
-
-  if (user && token && location) {
-    dispatch(setUser({ user, token }));
-    dispatch(setLocation(location));
-  }
-}, [dispatch]);
-
+  }, [dispatch]);
 
   useEffect(() => {
     console.log(isCheckedIn, history && history[history?.length - 1]);
   }, [isCheckedIn, history]);
-  useEffect(() => {
-    if (error !== "Authentication token not found. Please log in.")
-      setIsCheckedIn(history && history[history.length - 1]?.checkOut === null);
-  }, [history, error]);
+  // useEffect(() => {
+  //   if (error !== "Authentication token not found. Please log in.")
+  //     setIsCheckedIn(history && history[history.length - 1]?.checkOut === null);
+  // }, [history, error]);
 
   const fetchUserHistory = async () => {
     try {
@@ -242,7 +242,6 @@ useEffect(() => {
   useEffect(() => {
     if (!token) return;
     if (error !== "Authentication token not found. Please log in.") {
-
       const fetchData = async () => {
         try {
           setLoading(true);
@@ -319,10 +318,12 @@ useEffect(() => {
       const history = {
         // userId: userId,
         checkIn: {
-          city:location.city,
-          state:location.state?location.state :"",
-          country:location.country,
-          ip:location.ip?location.ip :"",
+          city: location.city,
+          state: location.state ? location.state : "",
+          country: location.country,
+          ip: location.ip ? location.ip : "",
+          lat:location.lat,
+          long:location.lon,
         },
         checkOut: null,
       };
@@ -451,13 +452,13 @@ useEffect(() => {
         )}
 
         <div className="bg-white rounded-2xl shadow-xl mb-8">
- <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-gray-200">
             <button
               onClick={() => handleTabChange("dashboard")}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "dashboard"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-white shadow-xl"
-                  : "text-gray-500 hover:text-gray-700 bg-gray-200"
+                  ? "text-indigo-600   bg-white shadow-"
+                  : "text-gray-500 hover:text-gray-700 bg-gray-300 opacity-70"
               }`}
             >
               <Clock className="w-5 h-5 inline-block mr-2" />
@@ -470,12 +471,12 @@ useEffect(() => {
               }}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === "history"
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-white shadow-xl"
-                  : "text-gray-500 hover:text-gray-700 bg-gray-200"
+                  ? "text-indigo-600   bg-white "
+                  : "text-gray-500 hover:text-gray-700 bg-gray-300 opacity-70"
               }`}
             >
               <History className="w-5 h-5 inline-block mr-2" />
-              History 
+              History
             </button>
           </div>
           {activeTab === "dashboard" && (
@@ -506,10 +507,10 @@ useEffect(() => {
                     <div className="text-center">
                       <p className="text-sm text-green-600 mb-1">Location</p>
                       <p className="text-lg font-semibold text-green-800 flex items-center justify-center">
-                        {location?.city && (
+                        {location?.lat && (
                           <Navigation className="w-4 h-4 mr-1 text-blue-500" />
                         )}
-                        {location?.city}
+                        {location?.lat}
                       </p>
                     </div>
                   </div>
@@ -523,7 +524,7 @@ useEffect(() => {
                 </label>
 
                 <div className="space-y-4">
-                  {!location?.city ? (
+                  {!location?.lat ? (
                     <div>
                       <button
                         onClick={getUserLocationDetails}
@@ -535,11 +536,11 @@ useEffect(() => {
                     </div>
                   ) : (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      {location?.city}
+                      {location?.lat}
                     </div>
                   )}
 
-                  {!location?.city && (
+                  {!location?.lat && (
                     <p className="text-sm text-gray-500 text-center py-4">
                       Please get your current location before checking in
                     </p>
@@ -551,7 +552,7 @@ useEffect(() => {
                 {!isCheckedIn ? (
                   <button
                     onClick={handleCheckIn}
-                    disabled={loading || !location?.city}
+                    disabled={loading || !location?.lat}
                     className="flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {loading ? (
@@ -586,12 +587,12 @@ useEffect(() => {
                   Attendance History
                 </h2>
                 <div className="text-sm text-gray-500">
-                  {history.length > 0
+                  {history?.length > 0
                     ? `${history.length} records`
                     : "No records"}
                 </div>
               </div>
-              {history.length === 0 ? (
+              {history?.length === 0 ? (
                 <div className="text-center py-6">
                   <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">No attendance history yet</p>

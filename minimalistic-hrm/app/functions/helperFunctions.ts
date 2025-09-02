@@ -1,29 +1,29 @@
 import { Location } from "../types";
 
 export const getAuthToken = (): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token");
-  };
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
+};
 
-  export const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    });
-  };
+export const formatTime = (date: Date): string => {
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+};
 
-  export const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: "Asia/Kolkata",
-    });
-  };
+export const formatDate = (date: Date): string => {
+  return date.toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+};
 
-  export const getUserLocationDetails = async () => {
+export const getUserLocationDetails = async () => {
   return new Promise<Location>((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation is not supported by this browser."));
@@ -33,47 +33,47 @@ export const getAuthToken = (): string | null => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        resolve({ lat: latitude, lon: longitude });
 
-        try {
-          // Optionally, reverse geocode the lat/long
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await res.json();
+        // try {
+        //   // Optionally, reverse geocode the lat/long
+        //   const res = await fetch(
+        //     `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+        //   );
+        //   const data = await res.json();
 
-          resolve({
-            lat: latitude,
-            lon: longitude,
-            city: data.address.city || data.address.town || data.address.village,
-            state: data.address.state||"",
-            country: data.address.country || "",
-            ip:data.ip || "",
-          });
-        } catch {
-          resolve({ lat: latitude, lon: longitude }); 
-        }
+        //   resolve({
+        //     lat: latitude,
+        //     lon: longitude,
+        //     city: data.address.city || data.address.town || data.address.village,
+        //     state: data.address.state||"",
+        //     country: data.address.country || "",
+        //     ip:data.ip || "",
+        //   });
+        // } catch {
+        //   resolve({ lat: latitude, lon: longitude });
+        // }
       },
       (error) => {
-        reject(error); 
+        reject(error);
       }
     );
   });
 };
 
+// export   const getUserLocationDetails = async (): Promise<object> => {
+//     try {
+//       const ipRes = await fetch("https://api.ipify.org?format=json");
+//       const { ip } = await ipRes.json();
 
-  // export   const getUserLocationDetails = async (): Promise<object> => {
-  //     try {
-  //       const ipRes = await fetch("https://api.ipify.org?format=json");
-  //       const { ip } = await ipRes.json();
-  
-  //       // Get location from IP
-  //       const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-  //       const { city, region: state, country } = await geoRes.json();
-  
-  //       // console.log(location)
-  //       return { city, ip, state, country };
-  //     } catch (error) {
-  //       console.warn("Failed to get real IP, using fallback:", error);
-  //       return { ip: "127.0.0.1" };
-  //     }
-  //   };
+//       // Get location from IP
+//       const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+//       const { city, region: state, country } = await geoRes.json();
+
+//       // console.log(location)
+//       return { city, ip, state, country };
+//     } catch (error) {
+//       console.warn("Failed to get real IP, using fallback:", error);
+//       return { ip: "127.0.0.1" };
+//     }
+//   };

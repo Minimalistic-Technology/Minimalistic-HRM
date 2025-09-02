@@ -25,11 +25,12 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="dark:bg-white/40 bg-white rounded-2xl shadow-xl p-6">
+<>
+    { pathname !== "/login" &&pathname !== "/" && <nav className="dark:bg-white/40 bg-white rounded-2xl shadow-xl p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {/* Only show user icon when NOT on login page */}
-          {(pathname !== "/login") && !(pathname === "/") && user && (
+          { user && (
             <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
               <UserIcon className="w-6 h-6 text-white" />
             </div>
@@ -53,7 +54,7 @@ const Navbar = () => {
           <p className="text-lg font-semibold text-gray-900">
             {formatDate(new Date())}
           </p>
-          {!(pathname === "/login") && !(pathname === "/") && user && (
+          { user && (
             <button
               onClick={logout}
               // disabled={loading}
@@ -65,7 +66,7 @@ const Navbar = () => {
           )}
         </div>
       </div>
-    </nav>
+    </nav>}</>
   );
 };
 
