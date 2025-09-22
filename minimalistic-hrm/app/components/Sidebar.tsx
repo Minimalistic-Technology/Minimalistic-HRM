@@ -123,10 +123,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   { id: 'dashboard', label: 'Dashboard', icon: Grid3X3, href: '/dashboard' },
   { id: 'projects', label: 'Projects', icon: ClipboardList, href: '/projects' },
   { id: 'messages', label: 'Messages', icon: Mail, href: '/messages' },
-  { id: 'files', label: 'Files', icon: FileText, href: '/files' },
-  { id: 'history', label: 'History', icon: Clock, href: '/history' },
-  { id: 'reports', label: 'Reports', icon: BookOpen, href: '/reports' },
-  { id: 'analytics', label: 'Analytics', icon: PieChart, href: '/analytics' },
+  { id: 'resources', label: 'Resources', icon: FileText, href: '/files' },
+  { id: 'attendance', label: 'Attendance', icon: Clock, href: '/history' },
+  { id: 'leave', label: 'Leave', icon: BookOpen, href: '/reports' },
+  { id: 'github', label: 'Github', icon: PieChart, href: '/analytics' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
 ];
 
@@ -155,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:relative top-0 left-0 h-full bg-white border-r border-gray-200 z-50
+        fixed lg:relative top-0 left-0  bg-white border-r border-gray-200 z-50
         transform transition-all duration-300 ease-in-out shadow-xl lg:shadow-none
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isCollapsed ? 'w-16' : 'w-64'}
@@ -171,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             font-semibold text-gray-900 transition-all duration-300 ease-in-out
             ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 text-xl'}
           `}>
-            Dashboard
+            HRM Board
           </h1>
           
           {/* Desktop Collapse Button */}
