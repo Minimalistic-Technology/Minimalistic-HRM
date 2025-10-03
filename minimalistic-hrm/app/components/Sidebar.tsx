@@ -84,10 +84,14 @@ import {
   PieChart,
   Settings,
   Menu,
+  Plane,
+  Github,
   X,
   ChevronLeft,
   ChevronRight,
-  Clock
+  Clock,
+  BarChart3,
+  Calendar
 } from 'lucide-react';
 import Link from "next/link";
 
@@ -120,13 +124,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleToggle = onToggle || (() => setInternalIsOpen(!internalIsOpen));
 
   const navigationItems: NavigationItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: Grid3X3, href: '/dashboard' },
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, href: '/dashboard' },
   { id: 'projects', label: 'Projects', icon: ClipboardList, href: '/projects' },
   { id: 'messages', label: 'Messages', icon: Mail, href: '/messages' },
-  { id: 'resources', label: 'Resources', icon: FileText, href: '/files' },
+  { id: 'resources', label: 'Resources', icon: FileText, href: '/resources' },
   { id: 'attendance', label: 'Attendance', icon: Clock, href: '/history' },
-  { id: 'leave', label: 'Leave', icon: BookOpen, href: '/reports' },
-  { id: 'github', label: 'Github', icon: PieChart, href: '/analytics' },
+  { id: 'leave', label: 'Leave', icon: Plane, href: '/leave' },
+  { id: 'github', label: 'Github', icon: Github, href: '/github' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
 ];
 
@@ -163,7 +167,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       `}>
         {/* Header */}
         <div className={`
-          p-4 border-b border-gray-200 flex items-center justify-between
+          p-4 flex items-center justify-between
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'px-3' : 'px-4'}
         `}>
@@ -224,7 +228,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             })}
           </div>
         </nav>
-
+ {/* Daily Meeting Card */}
+      <div className="p-4"> <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center"> <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3"> <Calendar className="w-6 h-6 text-blue-600" /> </div> <h3 className="font-semibold text-gray-900 mb-1">Daily Meeting</h3> <p className="text-sm text-gray-600 mb-3">9:30 - 10:30 Am 22nd</p> <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"> Join now </button> </div> </div>
         
       </div>
     </>

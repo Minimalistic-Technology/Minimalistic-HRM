@@ -5,6 +5,7 @@ import axios, { AxiosError } from "axios";
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
 import { formatTime } from "../functions/helperFunctions";
+import Checkin from "../components/Checkin";
 
 interface AttendanceRecord {
   _id: string;
@@ -67,8 +68,13 @@ const HistoryPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 flex ">
+       
+  <Checkin />
+
+
+      <div className="max-w-5xl  bg-white rounded-xl shadow-lg p-8 ">
+        
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Attendance History</h2>
           <span className="text-sm text-gray-500">{history.length} records</span>
@@ -125,3 +131,9 @@ const HistoryPage: React.FC = () => {
 };
 
 export default HistoryPage;
+
+
+
+
+
+
