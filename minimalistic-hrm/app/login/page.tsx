@@ -1,8 +1,5 @@
-
-
 "use client";
 import { useEffect, useState } from "react";
-
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,7 +15,6 @@ interface LoginForm {
 }
 
 
-
 const LoginPage = () => {
   const [formData, setFormData] = useState<LoginForm>({
     email: "",
@@ -31,7 +27,14 @@ const LoginPage = () => {
   const router = useRouter();
   // const {login} = useAuth();
   const dispatch = useDispatch()
-  const token = localStorage.getItem("token");
+  
+  const [token, setToken] = useState<string | null>(null);
+
+    useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+  }, []);
+
 
 
   useEffect(()=>{
