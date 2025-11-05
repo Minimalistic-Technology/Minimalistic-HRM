@@ -244,7 +244,7 @@ const HRDashboard = () => {
               <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
               <span className="text-gray-600">Absent 13%</span>
             </div>
-            <select className="border border-gray-200 rounded px-2 py-1 text-sm">
+            <select aria-label="Select time period" className="border border-gray-200 rounded px-2 py-1 text-sm">
               <option>Daily</option>
               <option>Weekly</option>
               <option>Monthly</option>
@@ -379,7 +379,7 @@ const HRDashboard = () => {
                       <span className="ml-2">{notice.date}</span>
                     </div>
                   </div>
-                  <button className="text-gray-400 hover:text-gray-600">
+                  <button aria-label="Star notice" className="text-gray-400 hover:text-gray-600">
                     <Star className="w-4 h-4" />
                   </button>
                 </div>
@@ -452,7 +452,7 @@ const HRDashboard = () => {
                           <Edit3 className="w-3.5 h-3.5 mr-1.5" />
                           Edit
                         </button>
-                        <button className=" text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button aria-label="More options" className=" text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
                       </div>
