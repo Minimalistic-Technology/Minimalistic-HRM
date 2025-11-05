@@ -335,6 +335,7 @@ const handleSocialLogin = async (provider: any) => {
                     value={formData.dateOfJoin}
                     onChange={handleChange}
                     required
+                    title="Date of Join"
                     className="w-full border rounded-lg px-4 py-2"
                   />
                 </>

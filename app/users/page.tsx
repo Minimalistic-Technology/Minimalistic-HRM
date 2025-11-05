@@ -24,8 +24,12 @@ const UserDashboard: React.FC = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "history">("dashboard");
+  const [token, setToken] = useState<string | null>(null);
 
-  const token = localStorage.getItem("token");
+   useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+  }, []);
 
   const fetchAttendance = async () => {
     try {
