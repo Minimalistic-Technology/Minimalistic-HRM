@@ -7,7 +7,8 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { getAuthToken, getUserLocationDetails } from "../functions/helperFunctions";
+
+import { getUserLocationDetails } from "../functions/helperFunctions";
 import { useRouter } from "next/navigation";
 
 type User = {

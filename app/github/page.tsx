@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   FolderIcon, 
   StarIcon, 
@@ -250,6 +250,8 @@ const GitHubRepoManager: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-blue-600 transition-colors"
+                    title={`Open ${repo.name} repository in new tab`}
+                    aria-label={`Open ${repo.name} repository in new tab`}
                   >
                     <ExternalLinkIcon className="w-4 h-4" />
                   </a>

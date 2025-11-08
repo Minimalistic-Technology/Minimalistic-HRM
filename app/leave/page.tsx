@@ -104,9 +104,6 @@ const LeaveManagement: React.FC = () => {
   };
 
   // Handle sorting
-  const handleSort = (field: keyof LeaveRecord) => {
-    // Sorting functionality removed - headers are now static
-  };
 
   // Sort data - now just returns data in original order
   const sortedData = [...leaveData];
@@ -183,7 +180,6 @@ const LeaveManagement: React.FC = () => {
     });
   };
 
-  const SortIcon = ({ field }: { field: keyof LeaveRecord }) => null; // Removed sort icons
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -343,7 +339,7 @@ const LeaveManagement: React.FC = () => {
 
                 {/* From Date */}
                 <div>
-                  <label htmlFor="fromDate" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <label htmlFor="fromDate" className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
                     From Date *
                   </label>
@@ -361,7 +357,7 @@ const LeaveManagement: React.FC = () => {
 
                 {/* To Date */}
                 <div>
-                  <label htmlFor="toDate" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <label htmlFor="toDate" className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
                     To Date *
                   </label>
@@ -388,7 +384,7 @@ const LeaveManagement: React.FC = () => {
 
                 {/* Reason */}
                 <div>
-                  <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <label htmlFor="reason" className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                     <FileText className="w-4 h-4 mr-1" />
                     Reason *
                   </label>

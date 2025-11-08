@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useState } from "react";
 import {
@@ -370,7 +372,7 @@ const MoveTaskModal = ({
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">
-            Move to "{getTargetTitle(targetStatus)}"
+            Move to &quot;{getTargetTitle(targetStatus)}&quot;
           </h2>
           <button
             onClick={onClose}

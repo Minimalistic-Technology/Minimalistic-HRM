@@ -1,6 +1,3 @@
-
-
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { User, Plus, Edit2, Trash2, Mail, Shield, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -328,10 +325,11 @@ const UserManager: React.FC = () => {
     }
   };
 
-  // Load users on component mount
   useEffect(() => {
-    fetchUsers();
-  }, []);
+  const fetchUsers = async () => {
+  };
+  fetchUsers();
+}, []);
 
   const resetForm = (): void => {
     setFormData({

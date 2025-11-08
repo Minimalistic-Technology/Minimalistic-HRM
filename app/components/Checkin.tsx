@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Clock, LogIn, LogOut, MapPin, Navigation } from "lucide-react";
+import { LogIn, LogOut, MapPin, Navigation } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { getUserLocationDetails } from "../functions/helperFunctions";

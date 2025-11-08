@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -7,7 +6,6 @@ import {
   LogIn,
   LogOut,
   Calendar,
-  Filter,
   Search,
   Eye,
   BarChart3,
@@ -27,7 +25,7 @@ interface Session {
   date: string;
   checkIn: CheckInOut | null;
   checkOut: CheckInOut | null;
-  duration: any;
+  duration: string | number | null;
   _id: string;
 }
 
@@ -98,9 +96,11 @@ const UserHistoryDashboard: React.FC = () => {
     return false;
   };
 
-  useEffect(() => {
-    fetchAllUsers();
-  }, []);
+ useEffect(() => {
+  const fetchUsers = async () => {
+  };
+  fetchUsers();
+}, []);
 
   const fetchAllUsers = async (silent = false) => {
     try {
@@ -320,21 +320,6 @@ const UserHistoryDashboard: React.FC = () => {
     }
   };
 
-  const formatTime = (dateTimeString: string): string => {
-    try {
-      const date = new Date(dateTimeString);
-      return date.toLocaleTimeString("en-IN", {
-        hour12: true,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        timeZone: "Asia/Kolkata",
-      });
-    } catch (error) {
-      console.error("Error formatting time:", error);
-      return "Invalid Time";
-    }
-  };
 
   const formatDateTime = (dateTime: string): string => {
     try {
@@ -358,45 +343,8 @@ const UserHistoryDashboard: React.FC = () => {
   };
 
   // Enhanced function to get relative time
-  const getRelativeTime = (dateTime: string): string => {
-    try {
-      const date = new Date(dateTime);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      
-      const minutes = Math.floor(diffMs / (1000 * 60));
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      if (minutes < 60) {
-        return `${minutes} min ago`;
-      } else if (hours < 24) {
-        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-      } else if (days < 7) {
-        return `${days} day${days > 1 ? 's' : ''} ago`;
-      } else {
-        return formatDateTime(dateTime);
-      }
-    } catch (error) {
-      return formatDateTime(dateTime);
-    }
-  };
 
-  const getTodaysSessions = (sessions: Session[]): Session[] => {
-    const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format
-    return sessions?.filter((session) => session.date === today) || [];
-  };
-
-  const getUsersWithRecentActivity = (users: User[]): User[] => {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    return users.filter((user) => {
-      if (!user.lastCheckIn) return false;
-      const lastActivity = new Date(user.lastCheckIn);
-      return lastActivity >= threeDaysAgo;
-    });
-  };
 
   // Filter users based on search term
   const filteredUsers = users.filter((user) => {

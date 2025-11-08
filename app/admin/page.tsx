@@ -1,17 +1,14 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   Users, 
   TrendingUp, 
   Calendar, 
- 
-  ChevronRight,
   Star,
-  Clock,
   CheckCircle,
   XCircle,
   TrendingDown,
-  BarChart3,
   Edit3,
   MoreHorizontal
 } from 'lucide-react';
@@ -59,17 +56,17 @@ interface StatCardProps {
 
 const HRDashboard = () => {
   
-  const [attendanceData, setAttendanceData] = useState([65, 78, 82, 90, 85, 88, 75, 92, 87, 79, 83, 86]);
+  const [attendanceData] = useState([65, 78, 82, 90, 85, 88, 75, 92, 87, 79, 83, 86]);
   
   // Dynamic data
-  const [dashboardStats, setDashboardStats] = useState({
+  const [dashboardStats] = useState({
     totalEmployees: { count: 26, change: 8.5, trend: 'up' as const },
     todayPresents: { count: 4, percentage: 16, trend: 'down' as const },
     todayAbsents: { count: 13, percentage: 50, trend: 'up' as const },
     todayLeave: { count: 9, percentage: 36, trend: 'down' as const }
   });
 
-  const [employees, setEmployees] = useState<Employee[]>([
+  const [employees] = useState<Employee[]>([
     {
       id: '01',
       name: 'Haary',
@@ -111,7 +108,7 @@ const HRDashboard = () => {
     }
   ]);
 
-  const [leaveApplications, setLeaveApplications] = useState<LeaveApplication[]>([
+  const [leaveApplications] = useState<LeaveApplication[]>([
     {
       id: '1',
       name: 'Harry',
@@ -136,7 +133,7 @@ const HRDashboard = () => {
    
   ]);
 
-  const [notices, setNotices] = useState<Notice[]>([
+  const [notices] = useState<Notice[]>([
     {
       id: '1',
       title: 'Get ready for meeting at 6 pm',
@@ -160,15 +157,6 @@ const HRDashboard = () => {
     }
   ]);
 
-  const getPerformanceColor = (performance: string) => {
-    switch (performance) {
-      case 'Excellent': return 'bg-green-100 text-green-800';
-      case 'Good': return 'bg-blue-100 text-blue-800';
-      case 'Average': return 'bg-yellow-100 text-yellow-800';
-      case 'Poor': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getPerformanceStyle = (performance: string) => {
     switch (performance) {
@@ -180,15 +168,6 @@ const HRDashboard = () => {
     }
   };
 
-  const getPerformanceIcon = (performance: string) => {
-    switch (performance) {
-      case 'Excellent': return <TrendingUp className="w-3 h-3 mr-1" />;
-      case 'Good': return <BarChart3 className="w-3 h-3 mr-1" />;
-      case 'Average': return <BarChart3 className="w-3 h-3 mr-1" />;
-      case 'Poor': return <TrendingDown className="w-3 h-3 mr-1" />;
-      default: return <BarChart3 className="w-3 h-3 mr-1" />;
-    }
-  };
   
   const StatCard: React.FC<StatCardProps> = ({ title, count, percentage, trend, details, icon: Icon }) => (
   
@@ -413,10 +392,12 @@ const HRDashboard = () => {
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-4">
                         <div className="relative">
-                          <img
+                          <Image
                             src={employee.avatar}
                             alt={employee.name}
-                            className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+                            width={10}
+                            height={10}
+                            className="rounded-full object-cover ring-2 ring-white shadow-sm"
                           />
                           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
                         </div>

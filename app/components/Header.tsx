@@ -1,25 +1,18 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { 
   Bell,
   X,
   Camera,
   Save,
-  Trash2,
   Upload,
   User,
   Mail,
   Phone,
-  Calendar,
-  Users,
   Briefcase,
-  Settings,
   CheckCircle,
-  Circle,
-  Eye,
-  Edit3,
-  Shield,
-  Award
+  Edit3
 } from 'lucide-react';
 
 // Define interfaces for type safety
@@ -65,9 +58,9 @@ const EnhancedHeaderWithProfile = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<FormData>({});
-  const [notifications, setNotifications] = useState<number>(0);
+  const [notifications] = useState<number>(0);
 
-  const userData: UserData = {
+  const userData: UserData = React.useMemo<UserData>(() => ({
       name: "Saxena",
       email: "saxena@company.com",
       phone: "1234567890",
@@ -83,14 +76,13 @@ const EnhancedHeaderWithProfile = () => {
       status: "Active",
       lastLogin: "2 hours ago",
       employeeId: ''
-  };
+  }), []);
 
   // Calculate overall progress (example calculation)
-  const overallProgress = 85;
 
   useEffect(() => {
     setFormData(userData);
-  }, []);
+  }, [userData]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -125,7 +117,7 @@ const EnhancedHeaderWithProfile = () => {
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">
                <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
-  <img
+<Image
     src="/m.jpg" // <- Replace with the correct image path
     alt="MT Logo"
     className="w-full h-full object-cover"
@@ -158,10 +150,12 @@ const EnhancedHeaderWithProfile = () => {
                 onClick={() => setShowProfileModal(true)}
               >
                 <div className="relative">
-                  <img
+                  <Image
                     src={userData.profileImage}
                     alt={userData.name}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-100"
+                    width={10}
+                    height={10}
+                    className="rounded-full object-cover ring-2 ring-blue-100"
                   />
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
                 </div>
@@ -184,7 +178,7 @@ const EnhancedHeaderWithProfile = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <img
+                    <Image
                       src={userData.profileImage}
                       alt={userData.name}
                       className="w-16 h-16 rounded-full object-cover ring-4 ring-white/20"
@@ -250,7 +244,7 @@ const EnhancedHeaderWithProfile = () => {
                         </h3>
                         <div className="flex items-center space-x-4">
                           <div className="relative">
-                            <img
+                            <Image
                               src={userData.profileImage}
                               alt={userData.name}
                               className="w-24 h-24 rounded-2xl object-cover"
@@ -299,7 +293,7 @@ const EnhancedHeaderWithProfile = () => {
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                               <Mail className="w-4 h-4 mr-2" />
                               Email Address
                             </label>
@@ -312,7 +306,7 @@ const EnhancedHeaderWithProfile = () => {
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                               <Phone className="w-4 h-4 mr-2" />
                               Phone Number
                             </label>

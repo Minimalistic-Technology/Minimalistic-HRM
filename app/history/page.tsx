@@ -9,18 +9,18 @@ import Checkin from "../components/Checkin";
 
 interface AttendanceRecord {
   _id: string;
-  checkIn: any;
-  checkOut: any;
+  checkIn: Date;
+  checkOut: Date;
 }
 
 interface ApiError {
   error: string;
 }
-function calculateDuration(checkIn: any, checkOut: any): string {
-  if (!checkIn?.dateTime || !checkOut?.dateTime) return "-";
+function calculateDuration(checkIn: Date, checkOut: Date): string {
+  if (!checkIn || !checkOut) return "-";
 
-  const start = new Date(checkIn.dateTime);
-  const end = new Date(checkOut.dateTime);
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
 
   const diffMs = end.getTime() - start.getTime();
   if (diffMs <= 0) return "-";
@@ -38,7 +38,7 @@ const HistoryPage: React.FC = () => {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/hrm";
 
-  const fetchUserHistory = async () => {
+  const fetchUserHistory = React.useCallback(async () => {
     try {
       if (!token) return;
       const res = await axios.get(`${API_BASE_URL}/HistoryByUserId`, {
@@ -53,11 +53,11 @@ const HistoryPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, API_BASE_URL]);
 
   useEffect(() => {
     fetchUserHistory();
-  }, []);
+  }, [fetchUserHistory]);
 
   if (loading) {
     return (

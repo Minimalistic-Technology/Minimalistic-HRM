@@ -4,12 +4,10 @@ import {
   Hash, 
   Plus, 
   Search, 
-  Filter, 
   Send, 
   MoreVertical,
   Users,
   Pin,
-  Star,
   Smile,
   Paperclip,
   X,
@@ -17,11 +15,7 @@ import {
   Edit3,
   Trash2,
   Copy,
-  MessageSquare,
-  Heart,
-  ThumbsUp,
-  Laugh,
-  AlertCircle
+  MessageSquare
 } from 'lucide-react';
 
 interface Message {
@@ -60,7 +54,7 @@ const MinimalisticTechnologyChannel: React.FC = () => {
     },
     {
       id: '2',
-      user: 'Parth Dhoshi',
+      user: 'Parth Doshi',
       avatar: 'AK',
       content: 'Has anyone tried implementing the "less is more" principle in API design? I\'m working on reducing our endpoint complexity.',
       timestamp: '4 hours ago',
@@ -107,7 +101,7 @@ const MinimalisticTechnologyChannel: React.FC = () => {
   const commonEmojis = ['👍', '❤️', '😂', '🚀', '💡', '🤔', '✨', '📖', '🎉', '👏'];
   
   const members = [
-    'Sneha Chavan', 'Parth Dhoshi', 'Harsh Rathani', 'Chirag', 
+    'Sneha Chavan', 'Parth Doshi', 'Harsh Rathani', 'Chirag', 
     'Devansh', 'Manan', 'Azim', 'Jay',
     'Vyom', 'Meet', 'Shubham', 'You'
   ];

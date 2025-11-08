@@ -1,12 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { setLocation, setUser } from "../store/authSlice";
 import { getUserLocationDetails } from "../functions/helperFunctions";
 import { Location } from "../types";
-import { RootState } from "../store/store";
 
 
 interface LoginForm {
