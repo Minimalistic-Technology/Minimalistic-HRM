@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "./components/Sidebar";
+//import Sidebar from "./components/Sidebar";
 
 import { AuthProvider } from "./context/AuthContext";
 import { Provider } from "react-redux";
@@ -39,7 +39,7 @@ export default function RootLayout({
 
         <ReduxProvider>
          <div className="flex min-h-screen">
-        <Sidebar/>
+        {/* <Sidebar/> */}
          
         <main className="flex-1 bg-gray-50">
          
