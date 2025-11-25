@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  auth,
-  googleProvider,
-  githubProvider,
-  twitterProvider,
-  facebookProvider,
-} from "../../firebase/firebase";
+// import {
+//   auth,
+//   googleProvider,
+//   githubProvider,
+//   twitterProvider,
+//   facebookProvider,
+// } from "../firebase/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -44,26 +44,26 @@ export default function AuthPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // auth state firebase
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
+  // useEffect(() => {
+  //   const unsubscribe = onAuthStateChanged(auth, (user) => {
+  //     setCurrentUser(user);
+  //   });
+  //   return () => unsubscribe();
+  // }, []);
 
 // re-captch
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        {
-          size: "invisible",
-          callback: (response: any) => console.log("Recaptcha verified"),
-        }
-      );
-    }
-  };
+  // const setupRecaptcha = () => {
+  //   if (!window.recaptchaVerifier) {
+  //     window.recaptchaVerifier = new RecaptchaVerifier(
+  //       auth,
+  //       "recaptcha-container",
+  //       {
+  //         size: "invisible",
+  //         callback: (response: any) => console.log("Recaptcha verified"),
+  //       }
+  //     );
+  //   }
+  // };
 
   //mfa
   const enrollMFA = async (phoneNumber: string) => {
@@ -77,27 +77,27 @@ export default function AuthPage() {
       return;
     }
 
-    setupRecaptcha();
+    // setupRecaptcha();
     const appVerifier = window.recaptchaVerifier;
 
     try {
       const session = await multiFactor(currentUser).getSession();
-      const phoneAuthProvider = new PhoneAuthProvider(auth);
-      const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-        { phoneNumber, session },
-        appVerifier
-      );
+      // const phoneAuthProvider = new PhoneAuthProvider(auth );
+      // const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+      //   { phoneNumber, session },
+      //   appVerifier
+      // );
 
       const code = prompt("Enter the verification code sent to your phone");
       if (!code) return;
 
-      const cred = PhoneAuthProvider.credential(verificationId, code);
-      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+      // const cred = PhoneAuthProvider.credential(verificationId, code);
+      // const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
 
-      await multiFactor(currentUser).enroll(
-        multiFactorAssertion,
-        "My Phone"
-      );
+      // await multiFactor(currentUser).enroll(
+      //   multiFactorAssertion,
+      //   "My Phone"
+      // );
       alert("MFA enabled successfully!");
     } catch (error: any) {
       console.error(error);
@@ -128,18 +128,18 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-  const userCredential = await signInWithEmailAndPassword(
-    auth,
-    formData.email,
-    formData.password
-  );
+  // const userCredential = await signInWithEmailAndPassword(
+  //   auth,
+  //   formData.email,
+  //   formData.password
+  // );
 
-  const firebaseUser = userCredential.user;
-  console.log(firebaseUser);
+  // const firebaseUser = userCredential.user;
+  // console.log(firebaseUser);
 
   // ✅ Fetch user role from Mongo using UID
-  const response = await axios.get(
-    `http://localhost:5000/api/hrm/getByUid/${firebaseUser.uid}`
+  const response = await axios.get(""
+    // `http://localhost:5000/api/hrm/getByUid/${firebaseUser.uid}`
   );
 
   console.log(response);
@@ -161,17 +161,17 @@ export default function AuthPage() {
 
 
       } else {
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          formData.email,
-          formData.password
-        );
+        // const userCredential = await createUserWithEmailAndPassword(
+        //   auth,
+        //   formData.email,
+        //   formData.password
+        // );
 
-        const user = userCredential.user;
-        await axios.post("http://localhost:5000/api/hrm/users", {
-          uid: user.uid,
-          ...formData,
-        });
+        // const user = userCredential.user;
+        // await axios.post("http://localhost:5000/api/hrm/users", {
+        //   uid: user.uid,
+        //   ...formData,
+        // });
 
 
         setMessage(
@@ -181,27 +181,27 @@ export default function AuthPage() {
     } catch (error: any) {
       if (error.code === "auth/multi-factor-auth-required") {
         const resolver = error.resolver;
-        setupRecaptcha();
+        // setupRecaptcha();
         const appVerifier = window.recaptchaVerifier;
         const phoneInfoOptions = {
           multiFactorHint: resolver.hints[0],
           session: resolver.session,
         };
 
-        const phoneAuthProvider = new PhoneAuthProvider(auth);
-        const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-          phoneInfoOptions,
-          appVerifier
-        );
+        // const phoneAuthProvider = new PhoneAuthProvider(auth);
+        // const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+        //   phoneInfoOptions,
+        //   appVerifier
+        // );
 
         const code = prompt("Enter the verification code sent to your phone:");
         if (!code) return;
 
-        const cred = PhoneAuthProvider.credential(verificationId, code);
-        const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+        // const cred = PhoneAuthProvider.credential(verificationId, code);
+        // const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
 
-        const userCredential = await resolver.resolveSignIn(multiFactorAssertion);
-        setMessage(`MFA login successful! Welcome ${userCredential.user.email}`);
+        // const userCredential = await resolver.resolveSignIn(multiFactorAssertion);
+        // setMessage(`MFA login successful! Welcome ${userCredential.user.email}`);
       } else {
         setMessage(error.message);
       }
@@ -209,26 +209,26 @@ export default function AuthPage() {
   };
 const handleSocialLogin = async (provider: any) => {
   try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    // const result = await signInWithPopup(auth, provider);
+    // const user = result.user;
 
-    const userData = {
-      uid: user.uid,
-      name: user.displayName || null,
-      email: user.email || null,
-      role: "default"
-    };
+    // const userData = {
+    //   uid: user.uid,
+    //   name: user.displayName || null,
+    //   email: user.email || null,
+    //   role: "default"
+    // };
 
-    await axios.post("http://localhost:5000/api/hrm/users", userData).catch((err) => {
-      if (err.response?.status === 400) {
-        console.log("User already exists in MongoDB");
-      } else {
-        throw err;
-      }
-    });
+    // await axios.post("http://localhost:5000/api/hrm/users", userData).catch((err) => {
+    //   if (err.response?.status === 400) {
+    //     console.log("User already exists in MongoDB");
+    //   } else {
+    //     throw err;
+    //   }
+    // });
 
-    const { data: mongoUser } = await axios.get(
-      `http://localhost:5000/api/hrm/getByUid/${user.uid}`
+    const { data: mongoUser } = await axios.get(""
+      // `http://localhost:5000/api/hrm/getByUid/${user.uid}`
     );
 
     if (!mongoUser) {
@@ -251,7 +251,7 @@ const handleSocialLogin = async (provider: any) => {
 
   
   const handleLogout = async () => {
-    await signOut(auth);
+    // await signOut(auth);
     setMessage("Logged out successfully.");
   };
 
@@ -370,7 +370,7 @@ const handleSocialLogin = async (provider: any) => {
 
             <div className="flex justify-between mt-4">
               <button
-                onClick={() => handleSocialLogin(googleProvider)}
+                // onClick={() => handleSocialLogin(googleProvider)}
                 className="bg-red-500 text-white px-3 py-2 rounded"
               >
                 Google
