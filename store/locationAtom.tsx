@@ -2,6 +2,7 @@
 "use client";
 
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
 export type Location = {
   city?: string;
@@ -12,7 +13,7 @@ export type Location = {
   ip?: string;
 };
 
-export const locationAtom = atom<Location | null>(null);
+export const locationAtom = atomWithStorage<Location | null>("location", null);
 
 export const setLocationAtom = atom(
   null,

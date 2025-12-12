@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { User, Plus, Loader2, AlertCircle } from "lucide-react";
 import { UserType, FormData, RoleOption, ValidationErrors } from "./types";
+import { getAuthToken } from "../../functions/helperFunctions";
 import UserForm from "./UserForm";
 import UserTable from "./UserTable";
 
@@ -34,20 +35,7 @@ const UserManager: React.FC = () => {
   });
 
   // token helper
-  const getAuthToken = (): string | null => {
-    if (typeof window === "undefined") return null;
 
-
-    const cookies = document.cookie.split(";");
-    const token = cookies.find((cookie) =>
-      cookie.trim().startsWith("token=")
-    );
-    if (token) {
-      return token.split("=")[1];
-    }
-
-    return null;
-  };
 
   const validateEmail = (email: string): boolean => {
     const emailRegex =
@@ -55,37 +43,37 @@ const UserManager: React.FC = () => {
     return emailRegex.test(email.toLowerCase());
   };
 
-const validatePassword = (
-  password: string
-): { isValid: boolean; errors: string[] } => {
-  const errors: string[] = [];
+  const validatePassword = (
+    password: string
+  ): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
 
-  if (password.length < 8) {
-    errors.push("At least 8 characters long");
-  }
-  if (!/[A-Z]/.test(password)) {
-    errors.push("At least one uppercase letter");
-  }
-  if (!/[a-z]/.test(password)) {
-    errors.push("At least one lowercase letter");
-  }
-  if (!/[0-9]/.test(password)) {
-    errors.push("At least one number");
-  }
+    if (password.length < 8) {
+      errors.push("At least 8 characters long");
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push("At least one uppercase letter");
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push("At least one lowercase letter");
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push("At least one number");
+    }
 
-  // 🔹 define the regex separately, simpler for TS parser
-  const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
-  if (!specialCharRegex.test(password)) {
-    errors.push(
-      'At least one special character (!@#$%^&*(),.?":{}|<>)'
-    );
-  }
+    // 🔹 define the regex separately, simpler for TS parser
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    if (!specialCharRegex.test(password)) {
+      errors.push(
+        'At least one special character (!@#$%^&*(),.?":{}|<>)'
+      );
+    }
 
-  return {
-    isValid: errors.length === 0,
-    errors,
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
   };
-};
 
 
   const getPasswordStrength = (password: string) => {

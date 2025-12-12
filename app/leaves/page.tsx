@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Edit, Trash2, Plus, X, Calendar, User, FileText } from "lucide-react";
+import { getAuthToken } from "../functions/helperFunctions";
 
 const API_BASE_URL = "http://localhost:5000/hrm/leaves";
 
@@ -84,17 +85,7 @@ const LeaveManagement: React.FC = () => {
     }
   };
 
-  const getAuthToken = (): string | null => {
-    if (typeof window === "undefined") return null;
 
-    const cookies = document.cookie.split(";");
-    const token = cookies.find((cookie) => cookie.trim().startsWith("token="));
-    if (token) {
-      return token.split("=")[1];
-    }
-
-    return null;
-  };
 
   const token = getAuthToken();
 

@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { Check, X, Loader2, RefreshCw } from "lucide-react";
+import { getAuthToken } from "../../functions/helperFunctions";
 
-const API_BASE_URL = "http://localhost:5000/hrm/leaves"; 
+const API_BASE_URL = "http://localhost:5000/hrm/leaves";
 
 // Shape from backend
 interface LeaveApi {
@@ -89,29 +90,19 @@ const HrLeavePage: React.FC = () => {
       appliedAt: leave.appliedAt || "",
     };
   };
-    
-   const getAuthToken = (): string | null => {
-    if (typeof window === "undefined") return null;
 
-    const cookies = document.cookie.split(";");
-    const token = cookies.find((cookie) => cookie.trim().startsWith("token="));
-    if (token) {
-      return token.split("=")[1];
-    }
 
-    return null;
-  };
 
   const token = getAuthToken();
 
-  
+
   const fetchLeaves = async () => {
     try {
       setLoading(true);
       setError(null);
 
       const res = await fetch(`${API_BASE_URL}/leaves`, {
-      headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) {
@@ -141,7 +132,7 @@ const HrLeavePage: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         credentials: "include",
         body: JSON.stringify({ action }), // backend expects { action: 'Approved' | 'Rejected' }

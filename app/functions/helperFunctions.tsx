@@ -1,8 +1,8 @@
+import Cookies from "js-cookie";
 import { Location } from "../types";
 
 export const getAuthToken = (): string | null => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  return Cookies.get("token") || null;
 };
 
 export const formatTime = (date: Date): string => {

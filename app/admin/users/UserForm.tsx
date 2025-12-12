@@ -1,12 +1,7 @@
 // app/admin/users/UserForm.tsx
 "use client";
 
-import {
-  Eye,
-  EyeOff,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { FormData, RoleOption, ValidationErrors, UserType } from "./types";
 import { useState } from "react";
 
@@ -112,9 +107,7 @@ const UserForm: React.FC<UserFormProps> = ({
               value={formData.password}
               onChange={(e) => onChange("password", e.target.value)}
               className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                validationErrors.password
-                  ? "border-red-500"
-                  : "border-gray-300"
+                validationErrors.password ? "border-red-500" : "border-gray-300"
               }`}
               placeholder={
                 editingUser
@@ -166,11 +159,13 @@ const UserForm: React.FC<UserFormProps> = ({
             }`}
             disabled={loading}
           >
-            {roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
+            {roles
+              .filter((role) => role.value !== "admin")
+              .map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
           </select>
           {validationErrors.role && (
             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">

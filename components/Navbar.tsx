@@ -28,22 +28,22 @@ export default function Navbar() {
 
   const commonLinks = [
     { href: "/", label: "Home" },
-    { href: "/profile", label: "Profile" },
+    
   ];
 
   const userLinks = [
-    { href: "/jobs", label: "Jobs" },
-    { href: "/applications", label: "My Applications" },
+    { href: "/attendance", label: "Attendance" },
+    { href: "/leaves", label: "Leaves" },
   ];
 
   const hrLinks = [
-    { href: "/hr/dashboard", label: "HR Dashboard" },
-    { href: "/hr/candidates", label: "Candidates" },
+    { href: "/hr/leaves", label: "Manage Leaves" },
+    { href: "/attendance", label: "Attendance" },
+    { href: "/leaves", label: "Leaves" },
   ];
 
   const adminLinks = [
     { href: "/admin/users", label: "Manage Users" },
-    { href: "/admin/settings", label: "Settings" },
   ];
 
   const getRoleLinks = () => {
@@ -71,7 +71,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         {/* Left */}
         <div className="flex items-center gap-8">
-          <h1 className="text-lg font-semibold text-slate-900">MyApp</h1>
+          <h1 className="text-lg font-semibold text-slate-900">HRM</h1>
 
           <ul className="flex items-center gap-5 text-sm text-slate-600">
             {commonLinks.map((link) => (

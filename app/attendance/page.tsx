@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useAtomValue } from "jotai";
 import { roleAtom } from "@/store/roleAtom";
 import { locationAtom } from "@/store/locationAtom";
+import { getAuthToken } from "../functions/helperFunctions";
 
 interface Session {
   checkIn: {
@@ -55,8 +56,7 @@ const UserDashboard: React.FC = () => {
   const role = useAtomValue(roleAtom);
   const location = useAtomValue(locationAtom);
 
-  // 🔹 Token from cookies (same as LoginPage)
-  const token = Cookies.get("token");
+
 
   const calculateTotalHours = (sessions: Session[]) => {
     let totalMs = 0;
@@ -81,32 +81,32 @@ const UserDashboard: React.FC = () => {
       ? calculateTotalHours(todayAttendance.sessions)
       : "0.00";
 
-  // Redirect if not logged in / wrong role
-  useEffect(() => {
-    if (!token) {
-      router.replace("/");
-      return;
-    }
 
-    // Optional: guard route by role
-    if (role && role !== "user") {
-      if (role === "admin") router.replace("/admin");
-      else if (role === "hr") router.replace("/hr/leaves");
-      else router.replace("/");
-    }
-  }, [token, role, router]);
 
-  const fetchAttendance = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/attendance/emp/attendance`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setAttendance(res.data);
-      checkCurrentStatus(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const token = getAuthToken();
+  console.log(token);
+
+const fetchAttendance = async () => {
+  try {
+    const token = getAuthToken(); // same helper you used in the working fetch example
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await axios.get(`${API_BASE}/attendance/emp/attendance`, {
+      headers,
+      withCredentials: true, // <-- important for axios (equivalent to credentials: 'include')
+    });
+
+    setAttendance(res.data);
+    checkCurrentStatus(res.data);
+  } catch (err) {
+    console.error("fetchAttendance error:", err);
+  } 
+};
+
 
   const checkCurrentStatus = (records: Attendance[]) => {
     if (records.length === 0) return setIsCheckedIn(false);
@@ -219,21 +219,19 @@ const UserDashboard: React.FC = () => {
         <div className="mb-8">
           <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm">
             <button
-              className={`px-4 py-1.5 rounded-full transition ${
-                activeTab === "dashboard"
+              className={`px-4 py-1.5 rounded-full transition ${activeTab === "dashboard"
                   ? "bg-white shadow-sm text-slate-900"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
               onClick={() => setActiveTab("dashboard")}
             >
               Dashboard
             </button>
             <button
-              className={`px-4 py-1.5 rounded-full transition ${
-                activeTab === "history"
+              className={`px-4 py-1.5 rounded-full transition ${activeTab === "history"
                   ? "bg-white shadow-sm text-slate-900"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
               onClick={() => setActiveTab("history")}
             >
               History
@@ -244,7 +242,7 @@ const UserDashboard: React.FC = () => {
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
           <div className="space-y-4">
-            
+
             {/* Status card */}
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
               <span className="text-sm font-medium text-slate-600">Status</span>
@@ -364,10 +362,10 @@ const UserDashboard: React.FC = () => {
                       record.sessions.map((session, idx) => {
                         const hours = session.checkOut
                           ? (
-                              (new Date(session.checkOut.dateTime).getTime() -
-                                new Date(session.checkIn.dateTime).getTime()) /
-                              (1000 * 60 * 60)
-                            ).toFixed(2)
+                            (new Date(session.checkOut.dateTime).getTime() -
+                              new Date(session.checkIn.dateTime).getTime()) /
+                            (1000 * 60 * 60)
+                          ).toFixed(2)
                           : "-";
 
                         return (

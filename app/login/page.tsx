@@ -95,18 +95,18 @@ const LoginPage = () => {
       const { token, user } = data;
 
       // Store token in cookies
-      Cookies.set("token", token, { expires: 7 });
-
+      Cookies.set("token", token, { expires: 7, path: "/" });
+      console.log(token);
       // Set role in jotai
       setRole(user.role);
-
+      console.log(roleAtom);
       // Set location in jotai
       const loc: Location = await getUserLocationDetails();
       setLocation(loc);
 
       // Redirect based on role
       if (user.role === "admin") router.push("/admin/users");
-      else if (user.role === "user") router.push("/users");
+      else if (user.role === "user") router.push("/attendance");
       else if (user.role === "hr") router.push("/hr/leaves");
       else setApiError("Unknown user role.");
     } catch (err) {
@@ -156,9 +156,8 @@ const LoginPage = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${
-                  errors.email ? "border-red-500 bg-red-50" : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300"
+                  }`}
                 placeholder="Enter your email"
               />
               {errors.email && (
@@ -180,11 +179,10 @@ const LoginPage = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${
-                  errors.password
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.password
                     ? "border-red-500 bg-red-50"
                     : "border-gray-300"
-                }`}
+                  }`}
                 placeholder="Enter your password"
               />
               {errors.password && (
