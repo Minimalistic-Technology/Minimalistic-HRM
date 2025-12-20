@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:5000/hrm/documents";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm";
 
 interface DocumentItem {
   _id: string;
@@ -48,7 +48,7 @@ export default function DocumentsPage() {
 
   /* ---------------- FETCH USER ---------------- */
   const fetchMe = async () => {
-    const res = await fetch("http://localhost:5000/hrm/auth/me", {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
       credentials: "include",
     });
     const data = await res.json();
@@ -57,7 +57,7 @@ export default function DocumentsPage() {
 
   /* ---------------- FETCH DOCS ---------------- */
   const fetchDocs = async (empId: string) => {
-    const res = await fetch(`${API_BASE}/${empId}`, {
+    const res = await fetch(`${API_BASE_URL}/documents/${empId}`, {
       credentials: "include",
     });
     const data = await res.json();
@@ -80,7 +80,7 @@ export default function DocumentsPage() {
     form.append("file", file);
     form.append("docType", docType);
 
-    await fetch(`${API_BASE}/upload`, {
+    await fetch(`${API_BASE_URL}/documents/upload`, {
       method: "POST",
       body: form,
       credentials: "include",
@@ -93,7 +93,7 @@ export default function DocumentsPage() {
 
   /* ---------------- VERIFY ---------------- */
   const verifyDoc = async (docId: string) => {
-    await fetch(`${API_BASE}/verify/${user!.id}/${docId}`, {
+    await fetch(`${API_BASE_URL}/documents/verify/${user!.id}/${docId}`, {
       method: "PUT",
       credentials: "include",
     });
@@ -102,7 +102,7 @@ export default function DocumentsPage() {
 
   /* ---------------- DELETE ---------------- */
   const deleteDoc = async (docId: string) => {
-    await fetch(`${API_BASE}/${user!.id}/${docId}`, {
+    await fetch(`${API_BASE_URL}/documents/${user!.id}/${docId}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -116,7 +116,7 @@ export default function DocumentsPage() {
     const form = new FormData();
     form.append("file", file);
 
-    await fetch(`${API_BASE}/reupload/${docId}`, {
+    await fetch(`${API_BASE_URL}/documents/reupload/${docId}`, {
       method: "PUT",
       body: form,
       credentials: "include",

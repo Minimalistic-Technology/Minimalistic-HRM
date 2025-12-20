@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Check, X, Loader2, RefreshCw } from "lucide-react";
 import { getAuthToken } from "../../functions/helperFunctions";
 import axios from "axios";
-const API_BASE_URL = "http://localhost:5000/hrm/leaves";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm/leaves";
 
 // Shape from backend
 interface LeaveApi {

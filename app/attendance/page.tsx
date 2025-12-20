@@ -40,7 +40,8 @@ interface Attendance {
   totalHours: number;
 }
 
-const API_BASE = "http://localhost:5000/hrm";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm";
 
 const UserDashboard: React.FC = () => {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -95,7 +96,7 @@ const fetchAttendance = async () => {
     };
     
 
-    const res = await axios.get(`${API_BASE}/attendance/emp/attendance`, {
+    const res = await axios.get(`${API_BASE_URL}/attendance/emp/attendance`, {
       headers,
       withCredentials: true, 
     });
@@ -161,7 +162,7 @@ const fetchAttendance = async () => {
     setLoading(true);
     try {
       const loc = await getUserLocation();
-      await axios.post(`${API_BASE}/attendance/checkin`, loc, {
+      await axios.post(`${API_BASE_URL}/attendance/checkin`, loc, {
         withCredentials: true,
       });
       await fetchAttendance();
@@ -177,7 +178,7 @@ const fetchAttendance = async () => {
     setLoading(true);
     try {
       const loc = await getUserLocation();
-      await axios.post(`${API_BASE}/attendance/checkout`, loc, {
+      await axios.post(`${API_BASE_URL}/attendance/checkout`, loc, {
         withCredentials: true,
       });
       await fetchAttendance();

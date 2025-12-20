@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Edit, Trash2, Plus, X, Calendar, User, FileText } from "lucide-react";
 import { getAuthToken } from "../functions/helperFunctions";
 import axios from "axios";
-const API_BASE_URL = "http://localhost:5000/hrm/leaves";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm/leaves";
 
 interface LeaveRecord {
   id: string;

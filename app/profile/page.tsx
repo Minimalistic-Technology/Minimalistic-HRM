@@ -13,6 +13,8 @@ interface Profile {
   photoURL?: string;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm";
+
 const DEFAULT_AVATAR =
   "https://ui-avatars.com/api/?name=User&background=6366f1&color=fff";
 
@@ -23,7 +25,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/hrm/auth/me", { withCredentials: true })
+      .get(`${API_BASE_URL}/auth/me`, { withCredentials: true })
       .then((res) => {
         setProfile(res.data);
         setFormData(res.data);
@@ -32,7 +34,7 @@ const ProfilePage = () => {
 
   const handleUpdate = async () => {
     const res = await axios.put(
-      "http://localhost:5000/hrm/auth/update-profile",
+      `${API_BASE_URL}/auth/update-profile`,
       formData,
       { withCredentials: true }
     );

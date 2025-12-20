@@ -13,8 +13,7 @@ import {
 import { getAuthToken } from "../../functions/helperFunctions";
 import UserForm from "./UserForm";
 import UserTable from "./UserTable";
-
-const API_BASE_URL = "http://localhost:5000/hrm";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm";
 
 const roles: RoleOption[] = [
   { value: "admin", label: "Administrator", color: "bg-red-50 text-red-800" },
@@ -54,7 +53,7 @@ const UserManager: React.FC = () => {
   }, []);
 
   const fetchCompanies = async () => {
-    const res = await fetch("http://localhost:5000/hrm/company", {
+    const res = await fetch(`${API_BASE_URL}/company`, {
       headers: {
         Authorization: `Bearer ${getAuthToken()}`,
       },
