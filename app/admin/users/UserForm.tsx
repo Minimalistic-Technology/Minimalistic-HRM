@@ -2,7 +2,13 @@
 "use client";
 
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
-import { FormData, RoleOption, ValidationErrors, UserType } from "./types";
+import {
+  FormData,
+  RoleOption,
+  ValidationErrors,
+  UserType,
+  Company,
+} from "./types";
 import { useState } from "react";
 
 interface UserFormProps {
@@ -16,6 +22,7 @@ interface UserFormProps {
   editingUser: UserType | null;
   passwordStrength: { strength: string; color: string };
   validateEmail: (email: string) => boolean;
+  companies: Company[]; // ✅ ADD
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -29,6 +36,7 @@ const UserForm: React.FC<UserFormProps> = ({
   editingUser,
   passwordStrength,
   validateEmail,
+  companies,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -160,7 +168,7 @@ const UserForm: React.FC<UserFormProps> = ({
             disabled={loading}
           >
             {roles
-              .filter((role) => role.value !== "admin")
+              .filter((role) => role.value !== "super_admin")
               .map((role) => (
                 <option key={role.value} value={role.value}>
                   {role.label}
@@ -171,6 +179,34 @@ const UserForm: React.FC<UserFormProps> = ({
             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="w-4 h-4" />
               {validationErrors.role}
+            </p>
+          )}
+        </div>
+        {/* Company */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Company *
+          </label>
+          <select
+            value={formData.companyID}
+            onChange={(e) => onChange("companyID", e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.companyId ? "border-red-500" : "border-gray-300"
+            }`}
+            disabled={loading}
+          >
+            <option value="">Select Company</option>
+            {companies.map((company) => (
+              <option key={company._id} value={company._id}>
+                {company.name}
+              </option>
+            ))}
+          </select>
+
+          {validationErrors.companyId && (
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {validationErrors.companyId}
             </p>
           )}
         </div>

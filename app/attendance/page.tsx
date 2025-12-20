@@ -93,11 +93,11 @@ const fetchAttendance = async () => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    
 
     const res = await axios.get(`${API_BASE}/attendance/emp/attendance`, {
       headers,
-      withCredentials: true, // <-- important for axios (equivalent to credentials: 'include')
+      withCredentials: true, 
     });
 
     setAttendance(res.data);
@@ -162,7 +162,7 @@ const fetchAttendance = async () => {
     try {
       const loc = await getUserLocation();
       await axios.post(`${API_BASE}/attendance/checkin`, loc, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       await fetchAttendance();
     } catch (err: any) {
@@ -178,7 +178,7 @@ const fetchAttendance = async () => {
     try {
       const loc = await getUserLocation();
       await axios.post(`${API_BASE}/attendance/checkout`, loc, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       await fetchAttendance();
     } catch (err: any) {

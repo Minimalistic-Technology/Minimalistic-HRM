@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Check, X, Loader2, RefreshCw } from "lucide-react";
 import { getAuthToken } from "../../functions/helperFunctions";
-
+import axios from "axios";
 const API_BASE_URL = "http://localhost:5000/hrm/leaves";
 
 // Shape from backend
@@ -72,7 +72,8 @@ const HrLeavePage: React.FC = () => {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const mapLeave = (leave: LeaveApi): LeaveRow => {
-    const fromISO = typeof leave.from === "string" ? leave.from : String(leave.from);
+    const fromISO =
+      typeof leave.from === "string" ? leave.from : String(leave.from);
     const toISO = typeof leave.to === "string" ? leave.to : String(leave.to);
 
     const fromDate = fromISO.split("T")[0];
@@ -91,30 +92,26 @@ const HrLeavePage: React.FC = () => {
     };
   };
 
-
-
   const token = getAuthToken();
-
 
   const fetchLeaves = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`${API_BASE_URL}/leaves`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axios.get<LeaveApi[]>(`${API_BASE_URL}/leaves`, {
+        withCredentials: true, // ✅ send cookies
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Failed to fetch leaves");
-      }
-
-      const data: LeaveApi[] = await res.json();
+      const data = res.data;
       setLeaves(data.map(mapLeave));
     } catch (err: any) {
       console.error("Fetch leaves error:", err);
-      setError(err.message || "Failed to fetch leaves");
+
+      const message =
+        err.response?.data?.message || err.message || "Failed to fetch leaves";
+
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -128,23 +125,15 @@ const HrLeavePage: React.FC = () => {
     try {
       setActionLoadingId(id);
 
-      const res = await fetch(`${API_BASE_URL}/handle/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        credentials: "include",
-        body: JSON.stringify({ action }), // backend expects { action: 'Approved' | 'Rejected' }
-      });
+      const res = await axios.put(
+        `${API_BASE_URL}/handle/${id}`,
+        { action }, // backend expects { action }
+        {
+          withCredentials: true, // ✅ cookie auth
+        }
+      );
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Failed to update leave");
-      }
-
-      const data = await res.json();
-      const updatedLeave: LeaveApi = data.leave;
+      const updatedLeave: LeaveApi = res.data.leave;
 
       setLeaves((prev) =>
         prev.map((l) =>
@@ -153,7 +142,13 @@ const HrLeavePage: React.FC = () => {
       );
     } catch (err: any) {
       console.error("Handle leave error:", err);
-      alert(err.message || "Error updating leave status");
+
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Error updating leave status";
+
+      alert(message);
     } finally {
       setActionLoadingId(null);
     }
@@ -166,7 +161,9 @@ const HrLeavePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">HR Leave Requests</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                HR Leave Requests
+              </h1>
               <p className="text-sm text-gray-500">
                 Review and manage all employee leave applications
               </p>
@@ -270,13 +267,16 @@ const HrLeavePage: React.FC = () => {
                         {formatDate(leave.appliedAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusStyle(leave.status)}>{leave.status}</span>
+                        <span className={getStatusStyle(leave.status)}>
+                          {leave.status}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex items-center space-x-2">
                           <button
                             disabled={
-                              leave.status !== "Pending" || actionLoadingId === leave.id
+                              leave.status !== "Pending" ||
+                              actionLoadingId === leave.id
                             }
                             onClick={() => handleAction(leave.id, "Approved")}
                             className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
@@ -290,7 +290,8 @@ const HrLeavePage: React.FC = () => {
                           </button>
                           <button
                             disabled={
-                              leave.status !== "Pending" || actionLoadingId === leave.id
+                              leave.status !== "Pending" ||
+                              actionLoadingId === leave.id
                             }
                             onClick={() => handleAction(leave.id, "Rejected")}
                             className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"

@@ -11,6 +11,13 @@ export interface UserType {
   dateOfJoin?: string;
   createdAt?: string;
   updatedAt?: string;
+  companyID?: string;
+}
+
+export interface Company {
+  _id: string;
+  name: string;
+  companyID: string;
 }
 
 export interface FormData {
@@ -21,6 +28,7 @@ export interface FormData {
   contact: string;
   address: string;
   photoURL: string;
+  companyID: string; 
 }
 
 export interface RoleOption {

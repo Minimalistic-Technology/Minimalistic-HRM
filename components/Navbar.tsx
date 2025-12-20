@@ -9,6 +9,7 @@ import { useAtom } from "jotai";
 import { roleAtom } from "@/store/roleAtom";
 import { locationAtom } from "@/store/locationAtom";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const router = useRouter();
@@ -18,7 +19,8 @@ export default function Navbar() {
 
   const [isClient, setIsClient] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/login";
   // ✅ Only run on client
   useEffect(() => {
     setIsClient(true);
@@ -26,23 +28,32 @@ export default function Navbar() {
     setIsLoggedIn(!!token);
   }, []);
 
-  const commonLinks = [
-    { href: "/", label: "Home" },
-    
-  ];
+  const commonLinks = [{ href: "/", label: "Home" }];
 
   const userLinks = [
+    { href: "/profile", label: "Profile" },
     { href: "/attendance", label: "Attendance" },
     { href: "/leaves", label: "Leaves" },
   ];
 
   const hrLinks = [
-    { href: "/hr/leaves", label: "Manage Leaves" },
+    { href: "/profile", label: "Profile" },
     { href: "/attendance", label: "Attendance" },
     { href: "/leaves", label: "Leaves" },
+    { href: "/hr/leaves", label: "Manage Leaves" },
+    { href: "/admin/users", label: "Manage Users" },
   ];
 
   const adminLinks = [
+    { href: "/profile", label: "Profile" },
+    { href: "/attendance", label: "Attendance" },
+    { href: "/leaves", label: "Leaves" },
+    { href: "/admin/users", label: "Manage Users" },
+    { href: "/hr/leaves", label: "Manage Leaves" },
+  ];
+
+  const superAdminLinks = [
+    { href: "/sa/companies", label: "Manage Companies" },
     { href: "/admin/users", label: "Manage Users" },
   ];
 
@@ -54,6 +65,8 @@ export default function Navbar() {
         return hrLinks;
       case "admin":
         return adminLinks;
+      case "super_admin":
+        return superAdminLinks;
       default:
         return [];
     }
@@ -100,30 +113,31 @@ export default function Navbar() {
               ))}
           </ul>
         </div>
-
         {/* Right */}
-        <div className="flex items-center gap-4 text-sm">
-          {isClient && isLoggedIn ? (
-            <>
-              {role && (
-                <span className="text-slate-500 capitalize">{role}</span>
-              )}
-              <button
-                onClick={handleLogout}
-                className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-700 hover:bg-slate-100 transition"
+        {!isLoginPage && (
+          <div className="flex items-center gap-4 text-sm">
+            {isClient && isLoggedIn ? (
+              <>
+                {role && (
+                  <span className="text-slate-500 capitalize">{role}</span>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-700 hover:bg-slate-100 transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-md bg-slate-900 px-4 py-1.5 text-white hover:bg-slate-800 transition"
               >
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-md bg-slate-900 px-4 py-1.5 text-white hover:bg-slate-800 transition"
-            >
-              Login
-            </Link>
-          )}
-        </div>
+                Login
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );

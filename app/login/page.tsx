@@ -107,6 +107,7 @@ const LoginPage = () => {
       // Redirect based on role
       if (user.role === "admin") router.push("/admin/users");
       else if (user.role === "user") router.push("/attendance");
+      else if (user.role === "super_admin") router.push("/sa/companies");
       else if (user.role === "hr") router.push("/hr/leaves");
       else setApiError("Unknown user role.");
     } catch (err) {

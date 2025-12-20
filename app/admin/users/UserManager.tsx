@@ -3,7 +3,13 @@
 
 import React, { useEffect, useState } from "react";
 import { User, Plus, Loader2, AlertCircle } from "lucide-react";
-import { UserType, FormData, RoleOption, ValidationErrors } from "./types";
+import {
+  UserType,
+  FormData,
+  RoleOption,
+  ValidationErrors,
+  Company,
+} from "./types";
 import { getAuthToken } from "../../functions/helperFunctions";
 import UserForm from "./UserForm";
 import UserTable from "./UserTable";
@@ -11,7 +17,12 @@ import UserTable from "./UserTable";
 const API_BASE_URL = "http://localhost:5000/hrm";
 
 const roles: RoleOption[] = [
-  { value: "admin", label: "Administrator", color: "bg-red-100 text-red-800" },
+  { value: "admin", label: "Administrator", color: "bg-red-50 text-red-800" },
+  {
+    value: "super_admin",
+    label: "Super Administrator",
+    color: "bg-red-100 text-red-800",
+  },
   { value: "user", label: "User", color: "bg-green-100 text-green-800" },
   { value: "hr", label: "HR", color: "bg-blue-100 text-blue-800" },
 ];
@@ -22,7 +33,9 @@ const UserManager: React.FC = () => {
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingUsers, setFetchingUsers] = useState(true);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {}
+  );
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -32,14 +45,30 @@ const UserManager: React.FC = () => {
     contact: "",
     address: "",
     photoURL: "",
+    companyID: "",
   });
+  const [companies, setCompanies] = useState<Company[]>([]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    const res = await fetch("http://localhost:5000/hrm/company", {
+      headers: {
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+      credentials: "include",
+    });
+
+    const data = await res.json();
+    setCompanies(Array.isArray(data) ? data : []);
+  };
 
   // token helper
 
-
   const validateEmail = (email: string): boolean => {
-    const emailRegex =
-      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email.toLowerCase());
   };
 
@@ -64,9 +93,7 @@ const UserManager: React.FC = () => {
     // 🔹 define the regex separately, simpler for TS parser
     const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
     if (!specialCharRegex.test(password)) {
-      errors.push(
-        'At least one special character (!@#$%^&*(),.?":{}|<>)'
-      );
+      errors.push('At least one special character (!@#$%^&*(),.?":{}|<>)');
     }
 
     return {
@@ -75,14 +102,14 @@ const UserManager: React.FC = () => {
     };
   };
 
-
   const getPasswordStrength = (password: string) => {
     if (!password) return { strength: "", color: "" };
 
     const validation = validatePassword(password);
     const score = 5 - validation.errors.length;
 
-    if (score === 5) return { strength: "Very Strong", color: "text-green-600" };
+    if (score === 5)
+      return { strength: "Very Strong", color: "text-green-600" };
     if (score === 4) return { strength: "Strong", color: "text-blue-600" };
     if (score === 3) return { strength: "Medium", color: "text-yellow-600" };
     if (score === 2) return { strength: "Weak", color: "text-orange-600" };
@@ -181,7 +208,7 @@ const UserManager: React.FC = () => {
 
   const addUser = async (userData: FormData): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/company/add-user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -195,6 +222,7 @@ const UserManager: React.FC = () => {
           contact: userData.contact,
           address: userData.address,
           photoURL: userData.photoURL,
+          companyID: userData.companyID,
         }),
       });
 
@@ -205,11 +233,10 @@ const UserManager: React.FC = () => {
         const error = await response
           .json()
           .catch(() => ({ message: "Failed to add user" }));
-        if (
-          error.message &&
-          error.message.toLowerCase().includes("email")
-        ) {
-          setValidationErrors({ email: "This email address is already registered" });
+        if (error.message && error.message.toLowerCase().includes("email")) {
+          setValidationErrors({
+            email: "This email address is already registered",
+          });
         }
         alert(error.message || "Failed to add user");
         return false;
@@ -250,11 +277,10 @@ const UserManager: React.FC = () => {
         const error = await response
           .json()
           .catch(() => ({ message: "Failed to update user" }));
-        if (
-          error.message &&
-          error.message.toLowerCase().includes("email")
-        ) {
-          setValidationErrors({ email: "This email address is already registered" });
+        if (error.message && error.message.toLowerCase().includes("email")) {
+          setValidationErrors({
+            email: "This email address is already registered",
+          });
         }
         alert(error.message || "Failed to update user");
         return false;
@@ -310,6 +336,7 @@ const UserManager: React.FC = () => {
       contact: "",
       address: "",
       photoURL: "",
+      companyID: "",
     });
     setEditingUser(null);
     setShowForm(false);
@@ -319,7 +346,7 @@ const UserManager: React.FC = () => {
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // ✅ safely clear field-specific error
+   
     if (validationErrors[field]) {
       setValidationErrors((prev) => {
         const { [field]: _removed, ...rest } = prev;
@@ -365,6 +392,7 @@ const UserManager: React.FC = () => {
       contact: user.contact || "",
       address: user.address || "",
       photoURL: user.photoURL || "",
+      companyID: user.companyID || "",
     });
     setEditingUser(user);
     setShowForm(true);
@@ -451,6 +479,7 @@ const UserManager: React.FC = () => {
             editingUser={editingUser}
             passwordStrength={passwordStrength}
             validateEmail={validateEmail}
+            companies={companies} // ✅ ADD THIS
           />
         )}
 
