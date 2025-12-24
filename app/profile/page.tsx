@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-
+import { getAuthToken } from "../functions/helperFunctions";
 interface Profile {
   name: string;
   email: string;
@@ -22,10 +22,16 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [formData, setFormData] = useState<Partial<Profile>>({});
   const [editOpen, setEditOpen] = useState(false);
-
+ const token = getAuthToken();
   useEffect(() => {
+   
     axios
-      .get(`${API_BASE_URL}/auth/me`, { withCredentials: true })
+      .get(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      })
       .then((res) => {
         setProfile(res.data);
         setFormData(res.data);
