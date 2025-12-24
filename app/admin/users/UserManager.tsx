@@ -35,6 +35,7 @@ const UserManager: React.FC = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
     {}
   );
+  const token = getAuthToken();
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -55,7 +56,7 @@ const UserManager: React.FC = () => {
   const fetchCompanies = async () => {
     const res = await fetch(`${API_BASE_URL}/company`, {
       headers: {
-        Authorization: `Bearer ${getAuthToken()}`,
+        Authorization: `Bearer ${token}`,
       },
       credentials: "include",
     });
@@ -211,6 +212,7 @@ const UserManager: React.FC = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         credentials: "include",
         body: JSON.stringify({
