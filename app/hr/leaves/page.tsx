@@ -100,6 +100,7 @@ const HrLeavePage: React.FC = () => {
       setError(null);
 
       const res = await axios.get<LeaveApi[]>(`${API_BASE_URL}/leaves`, {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true, // ✅ send cookies
       });
 
@@ -129,6 +130,7 @@ const HrLeavePage: React.FC = () => {
         `${API_BASE_URL}/handle/${id}`,
         { action }, // backend expects { action }
         {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
           withCredentials: true, // ✅ cookie auth
         }
       );

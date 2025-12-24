@@ -89,56 +89,57 @@ const LeaveManagement: React.FC = () => {
 
   const sortedData = [...leaveData];
 
-useEffect(() => {
-  const fetchLeaves = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    const fetchLeaves = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const res = await axios.get<LeaveApi[]>(
-        `${API_BASE_URL}/myleaves`,
-        {
-          withCredentials: true,
-        }
-      );
+        const res = await axios.get<LeaveApi[]>(
+          `${API_BASE_URL}/myleaves`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
 
-      const data = res.data; // ✅ axios data
+        const data = res.data; // ✅ axios data
 
-      const mapped: LeaveRecord[] = data.map((leave) => {
-        const fromISO = String(leave.from);
-        const toISO = String(leave.to);
+        const mapped: LeaveRecord[] = data.map((leave) => {
+          const fromISO = String(leave.from);
+          const toISO = String(leave.to);
 
-        const fromDate = fromISO.split("T")[0];
-        const toDate = toISO.split("T")[0];
+          const fromDate = fromISO.split("T")[0];
+          const toDate = toISO.split("T")[0];
 
-        return {
-          id: leave._id,
-          leaveType: leave.leaveType || "Leave",
-          fromDate,
-          toDate,
-          days: calculateDays(fromDate, toDate),
-          reason: leave.reason || "",
-          status: leave.status,
-        };
-      });
+          return {
+            id: leave._id,
+            leaveType: leave.leaveType || "Leave",
+            fromDate,
+            toDate,
+            days: calculateDays(fromDate, toDate),
+            reason: leave.reason || "",
+            status: leave.status,
+          };
+        });
 
-      setLeaveData(mapped);
-    } catch (err: any) {
-      console.error("Fetch leaves error:", err);
+        setLeaveData(mapped);
+      } catch (err: any) {
+        console.error("Fetch leaves error:", err);
 
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to load leaves";
+        const message =
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to load leaves";
 
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchLeaves();
-}, []);
+    fetchLeaves();
+  }, []);
 
   // Handle edit: open modal with existing data
   const handleEdit = (id: string) => {
@@ -156,31 +157,32 @@ useEffect(() => {
   };
 
 
-const handleDelete = async (id: string) => {
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this leave record?"
-  );
-  if (!confirmDelete) return;
-
-  try {
-    await axios.delete(
-      `${API_BASE_URL}/delete/${id}`,
-      {
-        withCredentials: true, // ✅ send cookie
-      }
+  const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this leave record?"
     );
+    if (!confirmDelete) return;
 
-    // Update UI after successful delete
-    setLeaveData((prev) => prev.filter((record) => record.id !== id));
-  } catch (err: any) {
-    const message =
-      err.response?.data?.message ||
-      err.message ||
-      "Error deleting leave";
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/delete/${id}`,
+        {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+          withCredentials: true, // ✅ send cookie
+        }
+      );
 
-    alert(message);
-  }
-};
+      // Update UI after successful delete
+      setLeaveData((prev) => prev.filter((record) => record.id !== id));
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Error deleting leave";
+
+      alert(message);
+    }
+  };
   // Apply Leave Button
   const handleApplyLeave = () => {
     setEditingLeaveId(null); // new leave
@@ -200,78 +202,78 @@ const handleDelete = async (id: string) => {
     }));
   };
 
- 
-// Handle form submission (apply or edit)
-const handleSubmitLeave = async () => {
-  if (
-    !formData.leaveType ||
-    !formData.fromDate ||
-    !formData.toDate ||
-    !formData.reason
-  ) {
-    alert("Please fill in all required fields");
-    return;
-  }
 
-  if (new Date(formData.fromDate) > new Date(formData.toDate)) {
-    alert("From date cannot be after To date");
-    return;
-  }
+  // Handle form submission (apply or edit)
+  const handleSubmitLeave = async () => {
+    if (
+      !formData.leaveType ||
+      !formData.fromDate ||
+      !formData.toDate ||
+      !formData.reason
+    ) {
+      alert("Please fill in all required fields");
+      return;
+    }
 
-  const payload = {
-    from: formData.fromDate,
-    to: formData.toDate,
-    reason: formData.reason,
-    leaveType: formData.leaveType,
-  };
+    if (new Date(formData.fromDate) > new Date(formData.toDate)) {
+      alert("From date cannot be after To date");
+      return;
+    }
 
-  try {
-    setSubmitting(true);
-
-    const url = editingLeaveId
-      ? `${API_BASE_URL}/edit/${editingLeaveId}`
-      : `${API_BASE_URL}/apply`;
-
-    const res = editingLeaveId
-      ? await axios.put(url, payload, { withCredentials: true })
-      : await axios.post(url, payload, { withCredentials: true });
-
-    const leave: LeaveApi = res.data.leave;
-
-    const fromISO = String(leave.from);
-    const toISO = String(leave.to);
-
-    const fromDate = fromISO.split("T")[0];
-    const toDate = toISO.split("T")[0];
-
-    const newRecord: LeaveRecord = {
-      id: leave._id,
-      leaveType: leave.leaveType || formData.leaveType,
-      fromDate,
-      toDate,
-      days: calculateDays(fromDate, toDate),
-      reason: leave.reason || formData.reason,
-      status: leave.status,
+    const payload = {
+      from: formData.fromDate,
+      to: formData.toDate,
+      reason: formData.reason,
+      leaveType: formData.leaveType,
     };
 
-    setLeaveData((prev) =>
-      editingLeaveId
-        ? prev.map((r) => (r.id === editingLeaveId ? newRecord : r))
-        : [newRecord, ...prev]
-    );
+    try {
+      setSubmitting(true);
 
-    closeModal();
-  } catch (err: any) {
-    const message =
-      err.response?.data?.message ||
-      err.message ||
-      "Error submitting leave";
+      const url = editingLeaveId
+        ? `${API_BASE_URL}/edit/${editingLeaveId}`
+        : `${API_BASE_URL}/apply`;
 
-    alert(message);
-  } finally {
-    setSubmitting(false);
-  }
-};
+      const res = editingLeaveId
+        ? await axios.put(url, payload, { headers: { Authorization: `Bearer ${getAuthToken()}` }, withCredentials: true })
+        : await axios.post(url, payload, { headers: { Authorization: `Bearer ${getAuthToken()}` }, withCredentials: true });
+
+      const leave: LeaveApi = res.data.leave;
+
+      const fromISO = String(leave.from);
+      const toISO = String(leave.to);
+
+      const fromDate = fromISO.split("T")[0];
+      const toDate = toISO.split("T")[0];
+
+      const newRecord: LeaveRecord = {
+        id: leave._id,
+        leaveType: leave.leaveType || formData.leaveType,
+        fromDate,
+        toDate,
+        days: calculateDays(fromDate, toDate),
+        reason: leave.reason || formData.reason,
+        status: leave.status,
+      };
+
+      setLeaveData((prev) =>
+        editingLeaveId
+          ? prev.map((r) => (r.id === editingLeaveId ? newRecord : r))
+          : [newRecord, ...prev]
+      );
+
+      closeModal();
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Error submitting leave";
+
+      alert(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Close modal
   const closeModal = () => {

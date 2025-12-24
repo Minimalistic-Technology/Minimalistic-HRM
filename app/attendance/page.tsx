@@ -87,26 +87,29 @@ const UserDashboard: React.FC = () => {
   const token = getAuthToken();
   console.log(token);
 
-const fetchAttendance = async () => {
-  try {
-    const token = getAuthToken(); // same helper you used in the working fetch example
+  const fetchAttendance = async () => {
+    try {
+      const token = getAuthToken(); // same helper you used in the working fetch example
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
 
-    const res = await axios.get(`${API_BASE_URL}/attendance/emp/attendance`, {
-      headers,
-      withCredentials: true, 
-    });
 
-    setAttendance(res.data);
-    checkCurrentStatus(res.data);
-  } catch (err) {
-    console.error("fetchAttendance error:", err);
-  } 
-};
+      const res = await axios.get(`${API_BASE_URL}/attendance/emp/attendance`, {
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+
+      setAttendance(res.data);
+      checkCurrentStatus(res.data);
+    } catch (err) {
+      console.error("fetchAttendance error:", err);
+    }
+  };
 
 
   const checkCurrentStatus = (records: Attendance[]) => {
@@ -163,6 +166,7 @@ const fetchAttendance = async () => {
     try {
       const loc = await getUserLocation();
       await axios.post(`${API_BASE_URL}/attendance/checkin`, loc, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
         withCredentials: true,
       });
       await fetchAttendance();
@@ -179,6 +183,7 @@ const fetchAttendance = async () => {
     try {
       const loc = await getUserLocation();
       await axios.post(`${API_BASE_URL}/attendance/checkout`, loc, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
         withCredentials: true,
       });
       await fetchAttendance();
@@ -221,8 +226,8 @@ const fetchAttendance = async () => {
           <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm">
             <button
               className={`px-4 py-1.5 rounded-full transition ${activeTab === "dashboard"
-                  ? "bg-white shadow-sm text-slate-900"
-                  : "text-slate-500 hover:text-slate-800"
+                ? "bg-white shadow-sm text-slate-900"
+                : "text-slate-500 hover:text-slate-800"
                 }`}
               onClick={() => setActiveTab("dashboard")}
             >
@@ -230,8 +235,8 @@ const fetchAttendance = async () => {
             </button>
             <button
               className={`px-4 py-1.5 rounded-full transition ${activeTab === "history"
-                  ? "bg-white shadow-sm text-slate-900"
-                  : "text-slate-500 hover:text-slate-800"
+                ? "bg-white shadow-sm text-slate-900"
+                : "text-slate-500 hover:text-slate-800"
                 }`}
               onClick={() => setActiveTab("history")}
             >
