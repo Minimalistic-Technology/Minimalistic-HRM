@@ -77,9 +77,9 @@ export default function CompanyManagementPage() {
   const createCompany = async () => {
     try {
       await axios.post(`${API_BASE_URL}/add`, createForm, {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          });
 
       setCreateForm({ name: "", companyType: "" });
       fetchCompanies();
@@ -110,9 +110,9 @@ export default function CompanyManagementPage() {
 
     try {
       await axios.put(`${API_BASE_URL}/${selectedCompany._id}`, editForm, {
-        withCredentials: true, 
-       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          });
 
       setSelectedCompany(null);
       fetchCompanies();
