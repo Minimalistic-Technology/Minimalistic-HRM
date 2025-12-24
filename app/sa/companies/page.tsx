@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEURL + "/hrm/company";
-
+import { getAuthToken } from "../../functions/helperFunctions";
 const COMPANY_TYPES = [
   "IT",
   "Finance",
@@ -71,12 +71,14 @@ export default function CompanyManagementPage() {
     fetchCompanies();
   }, []);
 
+  const token = getAuthToken();
+
   /* ================= CREATE COMPANY ================= */
   const createCompany = async () => {
     try {
       await axios.post(`${API_BASE_URL}/add`, createForm, {
         withCredentials: true,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
 
       setCreateForm({ name: "", companyType: "" });
@@ -109,7 +111,7 @@ export default function CompanyManagementPage() {
     try {
       await axios.put(`${API_BASE_URL}/${selectedCompany._id}`, editForm, {
         withCredentials: true, 
-        headers: { "Content-Type": "application/json" },
+       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
 
       setSelectedCompany(null);
