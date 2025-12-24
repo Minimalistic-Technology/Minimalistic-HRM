@@ -54,12 +54,15 @@ export default function CompanyManagementPage() {
     },
   });
 
+    const token = getAuthToken();
+
   /* ================= FETCH COMPANIES ================= */
   const fetchCompanies = async () => {
     try {
-      const res = await axios.get(API_BASE_URL, {
-        withCredentials: true,
-      });
+      const res = await axios.get(API_BASE_URL,  {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          });
 
       setCompanies(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
@@ -71,7 +74,7 @@ export default function CompanyManagementPage() {
     fetchCompanies();
   }, []);
 
-  const token = getAuthToken();
+
 
   /* ================= CREATE COMPANY ================= */
   const createCompany = async () => {
